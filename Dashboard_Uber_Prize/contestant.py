@@ -23,7 +23,7 @@ class Contestant():
         -------
         None
         """
-        self.activities_df, self.households_df, self.legs_df, self.paths_df, self.persons_df, self.trips_df = dfs
+        self.activities_df, self.households_df, self.legs_df, self.paths_df, self.persons_df, self.trips_df, self.frequency_df, self.fares_df, self.incentives_df, self.fleet_df = dfs
 
     def change_bar_width(self, ax, new_value) :
         for patch in ax.patches:

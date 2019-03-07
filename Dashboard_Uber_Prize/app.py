@@ -10,6 +10,11 @@ EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 def get_data(contestant, from_csv=False):
 
     if from_csv:
+        frequency_df = pd.read_csv('data/{}/submission-inputs/FrequencyAdjustment.csv'.format(contestant))
+        fares_df = pd.read_csv('data/{}/submission-inputs/MassTransitFares.csv'.format(contestant))
+        incentives_df = pd.read_csv('data/{}/submission-inputs/ModeIncentives.csv'.format(contestant))
+        fleet_df = pd.read_csv('data/{}/submission-inputs/VehicleFleetMix.csv'.format(contestant))
+
         activities_df = pd.read_csv('data/{}/activities_dataframe.csv'.format(contestant))
         households_df = pd.read_csv('data/{}/households_dataframe.csv'.format(contestant))
         legs_df = pd.read_csv('data/{}/legs_dataframe.csv'.format(contestant))
@@ -19,7 +24,7 @@ def get_data(contestant, from_csv=False):
     else:
         pass
 
-    return activities_df, households_df, legs_df, paths_df, persons_df, trips_df
+    return activities_df, households_df, legs_df, paths_df, persons_df, trips_df, frequency_df, fares_df, incentives_df, fleet_df
 
 def main():    
 
