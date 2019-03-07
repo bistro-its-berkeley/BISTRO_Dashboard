@@ -77,7 +77,7 @@ def main():
     @app.callback(
         dash.dependencies.Output('graph-1', 'figure'), 
         [dash.dependencies.Input('dropdown-a', 'value')])
-    def update_graph_2(value_a):
+    def update_graph_1(value_a):
         contestant_a = contestant_dict[value_a]
         return contestant_a.plot_mode_choice_by_income_group()
 

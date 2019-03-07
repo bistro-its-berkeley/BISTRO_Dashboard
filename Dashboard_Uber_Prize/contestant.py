@@ -1,5 +1,13 @@
+import matplotlib as mpl
+mpl.use('Agg')
+
+import matplotlib.pyplot as plt
 import pandas as pd 
 import plotly.graph_objs as go
+import plotly.tools as tls
+# import plotly.plotly as py
+import pprint
+import seaborn as sns 
 
 class Contestant():
 
@@ -16,6 +24,22 @@ class Contestant():
         None
         """
         self.activities_df, self.households_df, self.legs_df, self.paths_df, self.persons_df, self.trips_df = dfs
+
+    def change_bar_width(self, ax, new_value) :
+        for patch in ax.patches:
+            current_width = patch.get_width()
+            diff = current_width - new_value
+
+            # we change the bar width
+            patch.set_width(new_value)
+
+            # we recenter the bar
+            patch.set_x(patch.get_x() + diff * .5)
+
+    def set_xticklabels(self, plotly_fig, labels):
+        plotly_fig['layout']['xaxis']['ticktext'] = labels
+        plotly_fig['layout']['xaxis']['tickvals'] = range(len(labels))
+        return plotly_fig
 
     def plot_travel_speed_by_mode_comparison(self, contestant_b):
         pass
@@ -66,23 +90,35 @@ class Contestant():
         grouped = grouped.rename(
             index=str, columns={'PID': 'num_people'})
 
-        return {
-            'data': [go.Bar(
-                x=grouped[grouped['age_group'] == group]['realizedTripMode'].values, 
-                y=grouped[grouped['age_group'] == group]['num_people'].values,
-                name=group
-                ) for group in grouped['age_group'].unique()
-            ],
-            'layout': go.Layout(
-                title='Mode choice by age group',
-                xaxis={
-                    'title': 'Trip Mode'
-                },
-                yaxis={
-                    'title': 'Number of People'
-                }
-            )
-        }
+        fig, ax = plt.subplots(figsize=(7, 4))
+        sns.barplot(data=grouped, x="realizedTripMode", y="num_people", hue="age_group")
+        self.change_bar_width(ax, 1.0)
+        ax.set_xlabel('Trip Mode', fontsize=14)
+        ax.set_ylabel('Number of People', fontsize=14)
+        ax.legend(title="Age group", bbox_to_anchor=(1.0, 1.01))
+        ax.set_title("Mode choice by age group", fontsize=15)
+
+        plotly_fig = tls.mpl_to_plotly(fig)
+        plotly_fig = self.set_xticklabels(plotly_fig, grouped['realizedTripMode'].unique())
+        return plotly_fig
+
+        # return {
+        #     'data': [go.Bar(
+        #         x=grouped[grouped['age_group'] == group]['realizedTripMode'].values, 
+        #         y=grouped[grouped['age_group'] == group]['num_people'].values,
+        #         name=group
+        #         ) for group in grouped['age_group'].unique()
+        #     ],
+        #     'layout': go.Layout(
+        #         title='Mode choice by age group',
+        #         xaxis={
+        #             'title': 'Trip Mode'
+        #         },
+        #         yaxis={
+        #             'title': 'Number of People'
+        #         }
+        #     )
+        # }
 
     def plot_3(self, contestant_b):
         pass
@@ -95,3 +131,9 @@ class Contestant():
 
     def plot_6(self, contestant_b):
         pass
+
+# TODO:
+# checkboxes to toggle on/off various div's
+# add in xml parser function
+# input example plot: travel time
+# static image upload example
