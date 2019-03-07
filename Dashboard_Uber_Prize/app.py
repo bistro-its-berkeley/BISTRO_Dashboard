@@ -1,7 +1,7 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import pandas as pd 
+import pandas as pd
 
 from contestant import Contestant
 
@@ -27,6 +27,15 @@ def main():
 
     dropdown_options = [{'label': 'Leader {}'.format(n+1), 'value': 'leader_{}'.format(n+1)} for n in xrange(10)]
     dropdown_options.append({'label': 'Example Run', 'value': 'example_run'})
+    dropdown_options.append({'label': 'BAU', 'value': 'bau'})
+
+    contestant_dict = {}
+    for value in [inner_dict['value'] for inner_dict in dropdown_options]:
+        try:
+            dfs = get_data(value, from_csv=True)
+            contestant_dict[value] = Contestant(dfs=dfs)
+        except:
+            continue
 
     app.layout = html.Div(children=[
         html.H1(children='Contestant Visualization Dashboard'),
@@ -52,102 +61,64 @@ def main():
                 style={'width': '48%', 'float': 'right', 'display': 'inline-block'})]),
 
         html.Div([
-            html.Div(dcc.Graph(id='graph-1'), className="three columns"),
-            html.Div(dcc.Graph(id='graph-2'), className="three columns"),
-            html.Div(dcc.Graph(id='graph-3'), className="three columns"),
-            html.Div(dcc.Graph(id='graph-4'), className="three columns")
+            html.Div(dcc.Graph(id='graph-1'), className="six columns"),
+            html.Div(dcc.Graph(id='graph-2'), className="six columns"),
         ], className="row"),
         html.Div([
-            html.Div(dcc.Graph(id='graph-5'), className="three columns"),
-            html.Div(dcc.Graph(id='graph-6'), className="three columns"),
-            html.Div(dcc.Graph(id='graph-7'), className="three columns"),
-            html.Div(dcc.Graph(id='graph-8'), className="three columns")
+            html.Div(dcc.Graph(id='graph-3'), className="six columns"),
+            html.Div(dcc.Graph(id='graph-4'), className="six columns"),
         ], className="row"),
-
-        # hidden intermediate value
-        html.Div(id='intermediate-value', style={'display': 'none'})
+        html.Div([
+            html.Div(dcc.Graph(id='graph-5'), className="six columns"),
+            html.Div(dcc.Graph(id='graph-6'), className="six columns"),
+        ], className="row")
     ])
 
     @app.callback(
-        dash.dependencies.Output('intermediate-value', 'children'), 
-        [dash.dependencies.Input('dropdown-a', 'value'), dash.dependencies.Input('dropdown-b', 'value')])
-    def pull_dfs(value_a, value_b):
-        '''
-        This function pulls the data and generates the Contestant classes.
-
-        Whenever the dropdown menus are accessed, this will automatically rerun
-        and pull the correct datasets.
-
-        Parameters
-        ----------
-        value_a : str (which contestant is a)
-        value_b : str (which contestant is b)
-
-        Returns
-        -------
-        list of Contestant classes (contestant_a and contestant_b)
-        '''
-        dfs_a = get_data(contestant=value_a, from_csv=True)
-        dfs_b = get_data(contestant=value_b, from_csv=True)
-        contestant_a = Contestant(dfs=dfs_a)
-        contestant_b = Contestant(dfs=dfs_b)
-        return [contestant_a, contestant_b]
-
-    @app.callback(
         dash.dependencies.Output('graph-1', 'figure'), 
-        [dash.dependencies.Input('intermediate-value', 'children')])
-    def update_travel_speed_by_mode_comparison(contestant_list):
-        contestant_a, contestant_b = contestant_list
-        return contestant_a.plot_travel_speed_by_mode_comparison(contestant_b)
+        [dash.dependencies.Input('dropdown-a', 'value')])
+    def update_graph_2(value_a):
+        contestant_a = contestant_dict[value_a]
+        return contestant_a.plot_mode_choice_by_income_group()
 
     @app.callback(
         dash.dependencies.Output('graph-2', 'figure'), 
-        [dash.dependencies.Input('intermediate-value', 'children')])
-    def update_graph_2(contestant_list):
-        contestant_a, contestant_b = contestant_list
-        return contestant_a.plot_2(contestant_b)
+        [dash.dependencies.Input('dropdown-a', 'value')])
+    def update_graph_2(value_a):
+        contestant_a = contestant_dict[value_a]
+        return contestant_a.plot_mode_choice_by_age_group()
 
     @app.callback(
         dash.dependencies.Output('graph-3', 'figure'), 
-        [dash.dependencies.Input('intermediate-value', 'children')])
-    def update_graph_3(contestant_list):
-        contestant_a, contestant_b = contestant_list
+        [dash.dependencies.Input('dropdown-a', 'value'), dash.dependencies.Input('dropdown-b', 'value')])
+    def update_graph_3(value_a, value_b):
+        contestant_a = contestant_dict[value_a]
+        contestant_b = contestant_dict[value_b]
         return contestant_a.plot_3(contestant_b)
 
     @app.callback(
         dash.dependencies.Output('graph-4', 'figure'), 
-        [dash.dependencies.Input('intermediate-value', 'children')])
-    def update_graph_4(contestant_list):
-        contestant_a, contestant_b = contestant_list
+        [dash.dependencies.Input('dropdown-a', 'value'), dash.dependencies.Input('dropdown-b', 'value')])
+    def update_graph_4(value_a, value_b):
+        contestant_a = contestant_dict[value_a]
+        contestant_b = contestant_dict[value_b]
         return contestant_a.plot_4(contestant_b)
 
     @app.callback(
         dash.dependencies.Output('graph-5', 'figure'), 
-        [dash.dependencies.Input('intermediate-value', 'children')])
-    def update_graph_5(contestant_list):
-        contestant_a, contestant_b = contestant_list
+        [dash.dependencies.Input('dropdown-a', 'value'), dash.dependencies.Input('dropdown-b', 'value')])
+    def update_graph_5(value_a, value_b):
+        contestant_a = contestant_dict[value_a]
+        contestant_b = contestant_dict[value_b]
         return contestant_a.plot_5(contestant_b)
 
     @app.callback(
         dash.dependencies.Output('graph-6', 'figure'), 
-        [dash.dependencies.Input('intermediate-value', 'children')])
-    def update_graph_6(contestant_list):
-        contestant_a, contestant_b = contestant_list
+        [dash.dependencies.Input('dropdown-a', 'value'), dash.dependencies.Input('dropdown-b', 'value')])
+    def update_graph_6(value_a, value_b):
+        contestant_a = contestant_dict[value_a]
+        contestant_b = contestant_dict[value_b]
         return contestant_a.plot_6(contestant_b)
-
-    @app.callback(
-        dash.dependencies.Output('graph-7', 'figure'), 
-        [dash.dependencies.Input('intermediate-value', 'children')])
-    def update_graph_7(contestant_list):
-        contestant_a, contestant_b = contestant_list
-        return contestant_a.plot_7(contestant_b)
-
-    @app.callback(
-        dash.dependencies.Output('graph-8', 'figure'), 
-        [dash.dependencies.Input('intermediate-value', 'children')])
-    def update_graph_8(contestant_list):
-        contestant_a, contestant_b = contestant_list
-        return contestant_a.plot_8(contestant_b)
 
     app.run_server(debug=True)
 
