@@ -70,8 +70,7 @@ def main():
             html.Div(dcc.Graph(id='graph-2'), className="six columns"),
         ], className="row"),
         html.Div([
-            html.Div(dcc.Graph(id='graph-3'), className="six columns"),
-            html.Div(dcc.Graph(id='graph-4'), className="six columns"),
+            html.Div(dcc.Graph(id='graph-3'), className="twelve columns"),
         ], className="row"),
         html.Div([
             html.Div(dcc.Graph(id='graph-5'), className="six columns"),
@@ -95,19 +94,10 @@ def main():
 
     @app.callback(
         dash.dependencies.Output('graph-3', 'figure'), 
-        [dash.dependencies.Input('dropdown-a', 'value'), dash.dependencies.Input('dropdown-b', 'value')])
-    def update_graph_3(value_a, value_b):
+        [dash.dependencies.Input('dropdown-a', 'value')])
+    def update_graph_3(value_a):
         contestant_a = contestant_dict[value_a]
-        contestant_b = contestant_dict[value_b]
-        return contestant_a.plot_3(contestant_b)
-
-    @app.callback(
-        dash.dependencies.Output('graph-4', 'figure'), 
-        [dash.dependencies.Input('dropdown-a', 'value'), dash.dependencies.Input('dropdown-b', 'value')])
-    def update_graph_4(value_a, value_b):
-        contestant_a = contestant_dict[value_a]
-        contestant_b = contestant_dict[value_b]
-        return contestant_a.plot_4(contestant_b)
+        return contestant_a.plot_incentives_input()
 
     @app.callback(
         dash.dependencies.Output('graph-5', 'figure'), 
