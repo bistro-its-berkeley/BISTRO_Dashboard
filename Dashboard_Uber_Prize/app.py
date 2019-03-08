@@ -35,10 +35,10 @@ def main():
     dropdown_options.append({'label': 'BAU', 'value': 'bau'})
 
     contestant_dict = {}
-    for value in [inner_dict['value'] for inner_dict in dropdown_options]:
+    for value, label in {inner_dict['value']: inner_dict['label'] for inner_dict in dropdown_options}.iteritems():
         try:
             dfs = get_data(value, from_csv=True)
-            contestant_dict[value] = Contestant(dfs=dfs)
+            contestant_dict[value] = Contestant(name=label, dfs=dfs)
         except:
             continue
 
@@ -60,37 +60,146 @@ def main():
             html.Div(
                 dcc.Dropdown(
                     id='dropdown-b',
-                    options=dropdown_options + [{'label': 'BAU', 'value': 'bau'}],
+                    options=dropdown_options,
                     value='bau'
                 ),
                 style={'width': '48%', 'float': 'right', 'display': 'inline-block'})]),
 
         html.Div([
             dcc.Tabs(id="tabs", value='tab-inputs', children=[
+                dcc.Tab(label='Scores Overview', value='tab-scores'),
                 dcc.Tab(label='Inputs', value='tab-inputs'),
                 dcc.Tab(label='Outputs', value='tab-outputs'),
             ]),
             dcc.Checklist(id='checkboxes', values=['mode', 'inc'], labelStyle={'display': 'inline-block'})
         ]),
 
+        # Scores: normalized scores
         html.Div([
-            html.Div(dcc.Graph(id='graph-1'), className="six columns"),
-            html.Div(dcc.Graph(id='graph-2'), className="six columns"),
-        ], className="row"),
+            html.Div(dcc.Graph(id='score-graph-1'), className="six columns"),
+        ], id='score-div', className="row"),
+        # Inputs: bar charts of fleet mix, route schedules, fares, mode incentives
         html.Div([
-            html.Div(dcc.Graph(id='graph-3'), className="twelve columns"),
-        ], className="row"),
+            html.Div([
+                html.Div(dcc.Graph(id='inputs-fleetmix-graph-a'), className="six columns"),
+                html.Div(dcc.Graph(id='inputs-fleetmix-graph-b'), className="six columns"),
+            ], id='fleetmix-div', className="row"),
+            html.Div([
+                html.Div(dcc.Graph(id='inputs-routesched-graph-a'), className="six columns"),
+                html.Div(dcc.Graph(id='inputs-routesched-graph-b'), className="six columns"),
+            ], id='routessched-div', className="row"),
+            html.Div([
+                html.Div(dcc.Graph(id='inputs-fares-graph-a'), className="six columns"),
+                html.Div(dcc.Graph(id='inputs-fares-graph-b'), className="six columns"),
+            ], id='fares-div', className="row"),
+            html.Div([
+                html.Div(dcc.Graph(id='inputs-modeinc-graph-a'), className="six columns"),
+                html.Div(dcc.Graph(id='inputs-modeinc-graph-b'), className="six columns"),
+            ], id='modeinc-div', className="row")
+        ], id='inputs-div', className="row"),
+        # Outputs: Mode Choice, Congestion, Level of Service, Mass Transit C/B, Sustainability
         html.Div([
-            html.Div(dcc.Graph(id='graph-5'), className="six columns"),
-            html.Div(dcc.Graph(id='graph-6'), className="six columns"),
-        ], className="row")
+            # Mode Choice
+            html.Div([
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-mode-pie-chart-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-mode-pie-chart-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-mode-by-time-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-mode-by-time-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-mode-by-distance-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-mode-by-distance-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-mode-by-age-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-mode-by-age-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-mode-by-income-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-mode-by-income-b'), className="six columns"),
+                ], className="row"),
+            ], id='mode-div'),
+            # Congestion
+            html.Div([
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-congestion-travel-speed-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-congestion-travel-speed-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-congestion-total-vmt-by-mode-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-congestion-total-vmt-by-mode-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-congestion-on-demand-vmt-by-phases-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-congestion-on-demand-vmt-by-phases-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-congestion-bus-vmt-by-ridership-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-congestion-bus-vmt-by-ridership-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-congestion-delay-per-passenger-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-congestion-delay-per-passenger-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-congestion-delay-per-vehicle-type-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-congestion-delay-per-vehicle-type-b'), className="six columns"),
+                ], className="row"),
+            ], id='congestion-div'),
+            # Level of Service
+            html.Div([
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-los-crowding-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-los-crowding-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-los-num-passengers-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-los-num-passengers-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-los-travel-expenditure-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-los-travel-expenditure-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-los-od-matrix-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-los-od-matrix-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-los-boarding-alighting-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-los-boarding-alighting-b'), className="six columns"),
+                ], className="row"),
+            ], id='los-div'),
+            # Mass Transit C/B
+            html.Div([
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-transit-cb-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-transit-cb-b'), className="six columns"),
+                ], className="row"),
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-transit-inc-by-mode-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-transit-inc-by-mode-b'), className="six columns"),
+                ], className="row"),
+            ], id='transit-div'),
+            # Sustainability
+            html.Div([
+                html.Div([
+                    html.Div(dcc.Graph(id='outputs-sustainability-25pm-per-mode-a'), className="six columns"),
+                    html.Div(dcc.Graph(id='outputs-sustainability-25pm-per-mode-b'), className="six columns"),
+                ], className="row")
+            ], id='sustainability-div')
+        ], id='outputs-div')
     ])
 
     @app.callback(
         dash.dependencies.Output('checkboxes', 'options'),
         [dash.dependencies.Input('tabs', 'value')])
     def render_content(tab):
-        if tab == 'tab-inputs':
+        if tab == 'tab-scores':
+            return []
+        elif tab == 'tab-inputs':
             return [
                     {'label': 'Frequency', 'value': 'freq'},
                     {'label': 'Fares', 'value': 'fares'},
@@ -105,41 +214,47 @@ def main():
                     {'label': 'Mass Transit C/B', 'value': 'transit'},
                     {'label': 'Sustainability', 'value': 'sustainability'},
                 ]
+    #######################################################################
+
+    ############################### TOGGLES ###############################
+    @app.callback(
+        dash.dependencies.Output('score-div', 'style'),
+        [dash.dependencies.Input('tabs', 'value')])
+    def render_content(tab):
+        if tab == 'tab-scores':
+            return {'display': 'block'}
+        else:
+            return {'display': 'none'}
 
     @app.callback(
-        dash.dependencies.Output('graph-1', 'style'),
+        dash.dependencies.Output('fleetmix-div', 'style'),
         [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
     def render_content(tab, checklist):
-        if tab == 'tab-outputs' and 'mode' in checklist:
+        if tab == 'tab-inputs' and 'fleet' in checklist:
             return {'display': 'initial'}
         else:
             return {'display': 'none'}
 
     @app.callback(
-        dash.dependencies.Output('graph-1', 'figure'), 
-        [dash.dependencies.Input('dropdown-a', 'value')])
-    def update_graph_1(value_a):
-        contestant_a = contestant_dict[value_a]
-        return contestant_a.plot_mode_choice_by_income_group()
-
-    @app.callback(
-        dash.dependencies.Output('graph-2', 'style'),
+        dash.dependencies.Output('routessched-div', 'style'),
         [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
     def render_content(tab, checklist):
-        if tab == 'tab-outputs' and 'mode' in checklist:
+        if tab == 'tab-inputs' and 'freq' in checklist:
             return {'display': 'initial'}
         else:
             return {'display': 'none'}
 
     @app.callback(
-        dash.dependencies.Output('graph-2', 'figure'), 
-        [dash.dependencies.Input('dropdown-a', 'value')])
-    def update_graph_2(value_a):
-        contestant_a = contestant_dict[value_a]
-        return contestant_a.plot_mode_choice_by_age_group()
+        dash.dependencies.Output('fares-div', 'style'),
+        [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
+    def render_content(tab, checklist):
+        if tab == 'tab-inputs' and 'fares' in checklist:
+            return {'display': 'initial'}
+        else:
+            return {'display': 'none'}
 
     @app.callback(
-        dash.dependencies.Output('graph-3', 'style'),
+        dash.dependencies.Output('modeinc-div', 'style'),
         [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
     def render_content(tab, checklist):
         if tab == 'tab-inputs' and 'inc' in checklist:
@@ -148,27 +263,330 @@ def main():
             return {'display': 'none'}
 
     @app.callback(
-        dash.dependencies.Output('graph-3', 'figure'), 
+        dash.dependencies.Output('mode-div', 'style'),
+        [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
+    def render_content(tab, checklist):
+        if tab == 'tab-outputs' and 'mode' in checklist:
+            return {'display': 'initial'}
+        else:
+            return {'display': 'none'}
+
+    @app.callback(
+        dash.dependencies.Output('congestion-div', 'style'),
+        [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
+    def render_content(tab, checklist):
+        if tab == 'tab-outputs' and 'congestion' in checklist:
+            return {'display': 'initial'}
+        else:
+            return {'display': 'none'}
+
+    @app.callback(
+        dash.dependencies.Output('los-div', 'style'),
+        [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
+    def render_content(tab, checklist):
+        if tab == 'tab-outputs' and 'los' in checklist:
+            return {'display': 'initial'}
+        else:
+            return {'display': 'none'}
+
+    @app.callback(
+        dash.dependencies.Output('transit-div', 'style'),
+        [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
+    def render_content(tab, checklist):
+        if tab == 'tab-outputs' and 'transit' in checklist:
+            return {'display': 'initial'}
+        else:
+            return {'display': 'none'}
+
+    @app.callback(
+        dash.dependencies.Output('sustainability-div', 'style'),
+        [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
+    def render_content(tab, checklist):
+        if tab == 'tab-outputs' and 'sustainability' in checklist:
+            return {'display': 'initial'}
+        else:
+            return {'display': 'none'}
+    ######################################################################
+
+    ############################ INPUT GRAPHS ############################
+    # @app.callback(
+    #     dash.dependencies.Output('inputs-fleetmix-graph-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_fleetmix_input()
+
+    # @app.callback(
+    #     dash.dependencies.Output('inputs-fleetmix-graph-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_fleetmix_input()
+
+    # @app.callback(
+    #     dash.dependencies.Output('inputs-routesched-graph-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_routesched_input()
+
+    # @app.callback(
+    #     dash.dependencies.Output('inputs-routesched-graph-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_routesched_input()
+
+    # @app.callback(
+    #     dash.dependencies.Output('inputs-fares-graph-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_fares_input()
+
+    # @app.callback(
+    #     dash.dependencies.Output('inputs-fares-graph-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_fares_input()
+
+    # @app.callback(
+    #     dash.dependencies.Output('inputs-modeinc-graph-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_modeinc_input()
+
+    # @app.callback(
+    #     dash.dependencies.Output('inputs-modeinc-graph-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_modeinc_input()
+    ######################################################################
+
+    ########################### OUTPUT GRAPHS ###########################
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-mode-pie-chart-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_mode_pie_chart()
+    
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-mode-pie-chart-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_mode_pie_chart()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-mode-by-time-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_mode_choice_by_time()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-mode-by-time-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_mode_choice_by_time()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-mode-by-distance-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_mode_choice_by_distance()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-mode-by-distance-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_mode_choice_by_distance()
+
+    @app.callback(
+        dash.dependencies.Output('outputs-mode-by-age-a', 'figure'), 
         [dash.dependencies.Input('dropdown-a', 'value')])
-    def update_graph_3(value_a):
-        contestant_a = contestant_dict[value_a]
-        return contestant_a.plot_incentives_input()
+    def update_graph1(value):
+        return contestant_dict[value].plot_mode_choice_by_age_group()
 
     @app.callback(
-        dash.dependencies.Output('graph-5', 'figure'), 
-        [dash.dependencies.Input('dropdown-a', 'value'), dash.dependencies.Input('dropdown-b', 'value')])
-    def update_graph_5(value_a, value_b):
-        contestant_a = contestant_dict[value_a]
-        contestant_b = contestant_dict[value_b]
-        return contestant_a.plot_5(contestant_b)
+        dash.dependencies.Output('outputs-mode-by-age-b', 'figure'), 
+        [dash.dependencies.Input('dropdown-b', 'value')])
+    def update_graph2(value):
+        return contestant_dict[value].plot_mode_choice_by_age_group()
 
     @app.callback(
-        dash.dependencies.Output('graph-6', 'figure'), 
-        [dash.dependencies.Input('dropdown-a', 'value'), dash.dependencies.Input('dropdown-b', 'value')])
-    def update_graph_6(value_a, value_b):
-        contestant_a = contestant_dict[value_a]
-        contestant_b = contestant_dict[value_b]
-        return contestant_a.plot_6(contestant_b)
+        dash.dependencies.Output('outputs-mode-by-income-a', 'figure'), 
+        [dash.dependencies.Input('dropdown-a', 'value')])
+    def update_graph3(value):
+        return contestant_dict[value].plot_mode_choice_by_income_group()
+
+    @app.callback(
+        dash.dependencies.Output('outputs-mode-by-income-b', 'figure'), 
+        [dash.dependencies.Input('dropdown-b', 'value')])
+    def update_graph4(value):
+        return contestant_dict[value].plot_mode_choice_by_income_group()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-travel-speed-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_travel_speed()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-travel-speed-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_travel_speed()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-total-vmt-by-mode-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_total_vmt_by_mode()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-total-vmt-by-mode-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_total_vmt_by_mode()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-on-demand-vmt-by-phases-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_on_demand_vmt_by_phases()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-on-demand-vmt-by-phases-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_on_demand_vmt_by_phases()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-bus-vmt-by-ridership-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_bus_vmt_by_ridership()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-bus-vmt-by-ridership-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_bus_vmt_by_ridership()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-delay-per-passenger-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_delay_per_passenger()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-delay-per-passenger-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_delay_per_passenger()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-delay-per-vehicle-type-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_delay_per_vehicle_type()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-congestion-delay-per-vehicle-type-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_congestion_delay_per_vehicle_type()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-los-crowding-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_los_crowding()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-los-crowding-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_los_crowding()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-los-num-passengers-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_los_num_passengers()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-los-num-passengers-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_los_num_passengers()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-los-travel-expenditure-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_los_travel_expenditure()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-los-travel-expenditure-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_los_travel_expenditure()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-los-od-matrix-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_los_od_matrix()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-los-od-matrix-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_los_od_matrix()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-los-boarding-alighting-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_los_boarding_alighting()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-los-boarding-alighting-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_los_boarding_alighting()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-transit-cb-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_transit_cb()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-transit-cb-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_transit_cb()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-transit-inc-by-mode-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_transit_inc_by_mode()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-transit-inc-by-mode-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_transit_inc_by_mode()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-sustainability-25pm-per-mode-a', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-a', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_sustainability_25pm_per_mode()
+
+    # @app.callback(
+    #     dash.dependencies.Output('outputs-sustainability-25pm-per-mode-b', 'figure'), 
+    #     [dash.dependencies.Input('dropdown-b', 'value')])
+    # def update_graph(value):
+    #     return contestant_dict[value].plot_sustainability_25pm_per_mode()
+    ######################################################################
 
     app.run_server(debug=True)
 
