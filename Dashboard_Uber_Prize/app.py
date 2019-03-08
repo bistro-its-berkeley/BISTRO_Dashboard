@@ -66,6 +66,14 @@ def main():
                 style={'width': '48%', 'float': 'right', 'display': 'inline-block'})]),
 
         html.Div([
+            dcc.Tabs(id="tabs", value='tab-inputs', children=[
+                dcc.Tab(label='Inputs', value='tab-inputs'),
+                dcc.Tab(label='Outputs', value='tab-outputs'),
+            ]),
+            dcc.Checklist(id='checkboxes', values=['mode', 'inc'], labelStyle={'display': 'inline-block'})
+        ]),
+
+        html.Div([
             html.Div(dcc.Graph(id='graph-1'), className="six columns"),
             html.Div(dcc.Graph(id='graph-2'), className="six columns"),
         ], className="row"),
@@ -79,6 +87,35 @@ def main():
     ])
 
     @app.callback(
+        dash.dependencies.Output('checkboxes', 'options'),
+        [dash.dependencies.Input('tabs', 'value')])
+    def render_content(tab):
+        if tab == 'tab-inputs':
+            return [
+                    {'label': 'Frequency', 'value': 'freq'},
+                    {'label': 'Fares', 'value': 'fares'},
+                    {'label': 'Incentives', 'value': 'inc'},
+                    {'label': 'Fleet Mix', 'value': 'fleet'}
+                ]
+        elif tab == 'tab-outputs':
+            return [
+                    {'label': 'Mode', 'value': 'mode'},
+                    {'label': 'Congestion', 'value': 'congestion'},
+                    {'label': 'Level of Service', 'value': 'los'},
+                    {'label': 'Mass Transit C/B', 'value': 'transit'},
+                    {'label': 'Sustainability', 'value': 'sustainability'},
+                ]
+
+    @app.callback(
+        dash.dependencies.Output('graph-1', 'style'),
+        [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
+    def render_content(tab, checklist):
+        if tab == 'tab-outputs' and 'mode' in checklist:
+            return {'display': 'initial'}
+        else:
+            return {'display': 'none'}
+
+    @app.callback(
         dash.dependencies.Output('graph-1', 'figure'), 
         [dash.dependencies.Input('dropdown-a', 'value')])
     def update_graph_1(value_a):
@@ -86,11 +123,29 @@ def main():
         return contestant_a.plot_mode_choice_by_income_group()
 
     @app.callback(
+        dash.dependencies.Output('graph-2', 'style'),
+        [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
+    def render_content(tab, checklist):
+        if tab == 'tab-outputs' and 'mode' in checklist:
+            return {'display': 'initial'}
+        else:
+            return {'display': 'none'}
+
+    @app.callback(
         dash.dependencies.Output('graph-2', 'figure'), 
         [dash.dependencies.Input('dropdown-a', 'value')])
     def update_graph_2(value_a):
         contestant_a = contestant_dict[value_a]
         return contestant_a.plot_mode_choice_by_age_group()
+
+    @app.callback(
+        dash.dependencies.Output('graph-3', 'style'),
+        [dash.dependencies.Input('tabs', 'value'), dash.dependencies.Input('checkboxes', 'values')])
+    def render_content(tab, checklist):
+        if tab == 'tab-inputs' and 'inc' in checklist:
+            return {'display': 'initial'}
+        else:
+            return {'display': 'none'}
 
     @app.callback(
         dash.dependencies.Output('graph-3', 'figure'), 

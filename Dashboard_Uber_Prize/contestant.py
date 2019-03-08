@@ -43,6 +43,12 @@ class Contestant():
         plotly_fig['layout']['xaxis']['tickvals'] = range(len(labels))
         return plotly_fig
 
+    def showgrid(self, plotly_fig, y_gridwidth):
+        plotly_fig['layout']['xaxis']['showgrid'] = True
+        plotly_fig['layout']['yaxis']['showgrid'] = True
+        plotly_fig['layout']['yaxis']['gridwidth'] = y_gridwidth
+        return plotly_fig
+
     def splitting_min_max(self, df, name_column):
         """ Parsing and splitting the ranges in the "age" (or "income") columns into two new columns:
         "min_age" (or "min_income") with the bottom value of the range and "max_age" (or "max_income") with the top value
@@ -101,10 +107,12 @@ class Contestant():
             'layout': go.Layout(
                 title='Mode choice by income group',
                 xaxis={
-                    'title': 'Trip Mode'
+                    'title': 'Trip Mode',
+                    'showgrid': True
                 },
                 yaxis={
-                    'title': 'Number of People'
+                    'title': 'Number of People',
+                    'showgrid': True
                 }
             )
         }
@@ -133,6 +141,7 @@ class Contestant():
 
         plotly_fig = tls.mpl_to_plotly(fig)
         plotly_fig = self.set_xticklabels(plotly_fig, grouped['realizedTripMode'].unique())
+        plotly_fig = self.showgrid(plotly_fig, y_gridwidth=1)
         return plotly_fig
 
     def plot_incentives_input(self, max_incentive=50, max_age=120, max_income=150000):
@@ -178,7 +187,7 @@ class Contestant():
 
         # plot
         ax[0].barh(incentives["mode"], incentives["max_age"] - incentives["min_age"], left=incentives["min_age"], color=colors)
-        ax[1].barh(incentives["mode"], incentives["max_income"]-incentives["min_income"], left=incentives["min_income"], color=colors)
+        ax[1].barh(incentives["mode"], incentives["max_income"] - incentives["min_income"], left=incentives["min_income"], color=colors)
 
         ax[0].set_xlabel("age", fontsize=14)
         ax[0].set_xlim((0, max_age))
@@ -196,6 +205,7 @@ class Contestant():
         cbar.set_label('Incentive amount [$/person-trip]', rotation=270, labelpad=25)
 
         plotly_fig = tls.mpl_to_plotly(fig)
+        plotly_fig = self.showgrid(plotly_fig, y_gridwidth=1)
         return plotly_fig
 
     def plot_5(self, contestant_b):
