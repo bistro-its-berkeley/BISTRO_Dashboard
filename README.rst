@@ -25,7 +25,7 @@ To pull down the repo, type this into your terminal in the directory you want th
 
 Create a virtual environment to install your python packages in, and install the requirements.
 ::
-	virtualenv env
+	virtualenv --python=/usr/bin/python2.7 env
 	. env/bin/activate
 	pip install -r requirements.txt
 
