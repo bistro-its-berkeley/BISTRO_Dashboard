@@ -83,7 +83,7 @@ class Scenario():
             self.realized_mode_choice_df = pd.read_csv(join(self.submissions_dir, 'realizedModeChoice.csv'))
 
             path = join(self.submissions_dir, 'ITERS')
-            iter_num = max([int(file.split('.')[1]) for file in listdir(path)])
+            iter_num = max([int(file.split('.')[1]) for file in listdir(path) if file != '.DS_Store'])
             path = join(path, 'it.{}'.format(iter_num))
             self.mode_choice_hourly_df = pd.read_csv(join(path, '{}.modeChoice.csv'.format(iter_num)), index_col=0).T
             self.travel_times_df = pd.read_csv(join(path, '{}.averageTravelTimes.csv'.format(iter_num)))
@@ -211,7 +211,7 @@ class Scenario():
 
         if fleet_mix.empty:
             fleet_mix = pd.DataFrame(
-                [[agency_id, f"{route_id}", "BUS-DEFAULT"] for route_id in ROUTE_IDS for agency_id in AGENCY_IDS],
+                [[agency_id, "{}".format(route_id), "BUS-DEFAULT"] for route_id in ROUTE_IDS for agency_id in AGENCY_IDS],
                 columns=["agencyId", "routeId", "vehicleTypeId"])
 
         df = pd.DataFrame([AGENCY_IDS[0], '1', BUSES_LIST[0]]).T

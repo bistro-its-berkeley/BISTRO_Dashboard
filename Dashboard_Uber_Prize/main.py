@@ -14,10 +14,24 @@ from scenario import Scenario
 def update_scenario1(attrname, old, new):
     scenario1 = Scenario(name=new)
     scenario1_inputs_plots, scenario1_scores_plots, scenario1_outputs_mode_plots, scenario1_outputs_congestion_plots, scenario1_outputs_los_plots, scenario1_outputs_transitcb_plots, scenario1_outputs_sustainability_plots = scenario1.make_all_plots()
+    inputs_plots.children[0] = column(scenario1_inputs_plots)
+    scores_plots.children[0] = column(scenario1_scores_plots)
+    outputs_mode_plots.children[0] = column(scenario1_outputs_mode_plots)
+    outputs_congestion_plots.children[0] = column(scenario1_outputs_congestion_plots)
+    outputs_los_plots.children[0] = column(scenario1_outputs_los_plots)
+    outputs_transitcb_plots.children[0] = column(scenario1_outputs_transitcb_plots)
+    outputs_sustainability_plots.children[0] = column(scenario1_outputs_sustainability_plots)
 
 def update_scenario2(attrname, old, new):
     scenario2 = Scenario(name=new)
     scenario2_inputs_plots, scenario2_scores_plots, scenario2_outputs_mode_plots, scenario2_outputs_congestion_plots, scenario2_outputs_los_plots, scenario2_outputs_transitcb_plots, scenario2_outputs_sustainability_plots = scenario2.make_all_plots()
+    inputs_plots.children[1] = column(scenario2_inputs_plots)
+    scores_plots.children[1] = column(scenario2_scores_plots)
+    outputs_mode_plots.children[1] = column(scenario2_outputs_mode_plots)
+    outputs_congestion_plots.children[1] = column(scenario2_outputs_congestion_plots)
+    outputs_los_plots.children[1] = column(scenario2_outputs_los_plots)
+    outputs_transitcb_plots.children[1] = column(scenario2_outputs_transitcb_plots)
+    outputs_sustainability_plots.children[1] = column(scenario2_outputs_sustainability_plots)
 
 # def update_output_plots(new):
 #     scenario1_outputs_plots = []
@@ -45,10 +59,11 @@ def update_scenario2(attrname, old, new):
 
 #     outputs_plots = row(column(scenario1_outputs_plots), column(scenario2_outputs_plots))
 
-title_div = Div(text="<b>UberPrize Visualization Dashboard</b>", width=800, height=10, style={'font-size': '200%'})
+title_div = Div(text="<img src='Dashboard_Uber_Prize/static/uber.svg' height='18'><b>Prize Visualization Dashboard</b>", width=800, height=10, style={'font-size': '200%'})
+
 
 path = join(dirname(__file__), 'data/submissions/')
-scenarios = [file for file in listdir(path) if '.' not in file]
+scenarios = [file for file in listdir(path) if '.' not in file and file != '.DS_Store']
 
 if 'warm-start' in scenarios:
     scenario1_key = 'warm-start'
@@ -62,6 +77,7 @@ else:
 
 scenario1 = Scenario(name=scenario1_key)
 scenario1_inputs_plots, scenario1_scores_plots, scenario1_outputs_mode_plots, scenario1_outputs_congestion_plots, scenario1_outputs_los_plots, scenario1_outputs_transitcb_plots, scenario1_outputs_sustainability_plots = scenario1.make_all_plots()
+# print(scenario1_inputs_plots[0].children[1].source)
 
 scenario2 = Scenario(name=scenario2_key)
 scenario2_inputs_plots, scenario2_scores_plots, scenario2_outputs_mode_plots, scenario2_outputs_congestion_plots, scenario2_outputs_los_plots, scenario2_outputs_transitcb_plots, scenario2_outputs_sustainability_plots = scenario2.make_all_plots()
