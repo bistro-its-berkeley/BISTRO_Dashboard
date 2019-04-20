@@ -5,14 +5,8 @@ from os.path import dirname, join
 import pandas as pd 
 # import seaborn as sns 
 
-from bokeh.core.properties import value
-from bokeh.io import show, output_file
-from bokeh.layouts import row, column, gridplot
-from bokeh.models import BasicTicker, ColorBar, ColumnDataSource, LabelSet, Legend, LinearColorMapper
-from bokeh.models.formatters import NumeralTickFormatter
+from bokeh.models import ColumnDataSource
 from bokeh.palettes import Category10, Category20, Plasma256, YlOrRd
-from bokeh.plotting import figure
-from bokeh.transform import dodge, transform
 
 CATEGORIES = [
     'Accessibility: Number of secondary locations accessible within 15 minutes',
@@ -26,7 +20,6 @@ CATEGORIES = [
     'Sustainability: Total PM 2.5 Emissions',
     'Submission Score'
 ]
-BUS_LINES_DIR = join(dirname(__file__), 'data/sioux_faux_bus_lines')
 HOURS = [str(h) for h in range(24)]
 ROUTE_IDS = ['1340', '1341', '1342', '1343', '1344', '1345', '1346', '1347', '1348', '1349', '1350', '1351']
 BUSES_LIST = ['BUS-DEFAULT', 'BUS-SMALL-HD', 'BUS-STD-HD', 'BUS-STD-ART']
@@ -62,6 +55,7 @@ class Scenario():
         self.submissions_dir = join(dirname(__file__), 'data/submissions/{}'.format(self.name))
         self.reference_dir = join(dirname(__file__), 'data/sioux_faux_bus_lines')
         self.get_data(from_csv=True)
+        self.make_data_sources()
 
     def get_data(self, from_csv=False):
 
@@ -97,46 +91,36 @@ class Scenario():
         else:
             pass
 
-    def make_all_plots(self):
-        inputs_plots = []
-        inputs_plots.append(self.plot_modeinc_input())
-        inputs_plots.append(self.plot_fleetmix_input())
-        inputs_plots.append(self.plot_fares_input())
-        inputs_plots.append(self.plot_routesched_input())
+    def make_data_sources(self):
 
-        scores_plots = []
-        scores_plots.append(self.plot_normalized_scores())
+        self.modeinc_input_data = self.make_modeinc_input_data()
+        self.fleetmix_input_data = self.make_fleetmix_input_data()
+        self.fares_input_data = self.make_fares_input_data()
+        self.routesched_input_line_data, self.routesched_input_start_data, self.routesched_input_end_data = self.make_routesched_input_data()
 
-        outputs_mode_plots = []
-        outputs_mode_plots.append(self.plot_mode_pie_chart(
-            self.mode_choice_df.copy(), title="Overall planned mode choice - {}"))
-        outputs_mode_plots.append(self.plot_mode_pie_chart(
-            self.realized_mode_choice_df.copy(), title="Overall realized mode choice - {}"))
-        outputs_mode_plots.append(self.plot_mode_choice_by_time())
-        outputs_mode_plots.append(self.plot_mode_choice_by_age_group())
-        outputs_mode_plots.append(self.plot_mode_choice_by_income_group())
-        outputs_mode_plots.append(self.plot_mode_choice_by_distance())
+        self.normalized_scores_data = self.make_normalized_scores_data()
 
-        outputs_congestion_plots = []
-        outputs_congestion_plots.append(self.plot_congestion_travel_time_by_mode())
-        outputs_congestion_plots.append(self.plot_congestion_travel_time_per_passenger_trip())
-        outputs_congestion_plots.append(self.plot_congestion_miles_travelled_per_mode())
-        outputs_congestion_plots.append(self.plot_congestion_bus_vmt_by_ridership())
-        outputs_congestion_plots.append(self.plot_congestion_on_demand_vmt_by_phases())
-        outputs_congestion_plots.append(self.plot_congestion_travel_speed())
+        self.mode_planned_pie_chart_data = self.make_mode_pie_chart_data(self.mode_choice_df.copy())
+        self.mode_realized_pie_chart_data = self.make_mode_pie_chart_data(self.realized_mode_choice_df.copy())
+        self.mode_choice_by_time_data = self.make_mode_choice_by_time_data()
+        self.mode_choice_by_age_group_data = self.make_mode_choice_by_age_group_data()
+        self.mode_choice_by_income_group_data = self.make_mode_choice_by_income_group_data()
+        self.mode_choice_by_distance_data = self.make_mode_choice_by_distance_data()
 
-        outputs_los_plots = []
-        outputs_los_plots.append(self.plot_los_travel_expenditure())
-        outputs_los_plots.append(self.plot_los_crowding())
+        self.congestion_travel_time_by_mode_data = self.make_congestion_travel_time_by_mode_data()
+        self.congestion_travel_time_per_passenger_trip_data = self.make_congestion_travel_time_per_passenger_trip_data()
+        self.congestion_miles_travelled_per_mode_data = self.make_congestion_miles_travelled_per_mode_data()
+        self.congestion_bus_vmt_by_ridership_data = self.make_congestion_bus_vmt_by_ridership_data()
+        self.congestion_on_demand_vmt_by_phases_data = self.make_congestion_on_demand_vmt_by_phases_data()
+        self.congestion_travel_speed_data = self.make_congestion_travel_speed_data()
 
-        outputs_transitcb_plots = []
-        outputs_transitcb_plots.append(self.plot_transit_cb())
-        outputs_transitcb_plots.append(self.plot_transit_inc_by_mode())
+        self.los_travel_expenditure_data = self.make_los_travel_expenditure_data()
+        self.los_crowding_data = self.make_los_crowding_data()
 
-        outputs_sustainability_plots = []
-        outputs_sustainability_plots.append(self.plot_sustainability_25pm_per_mode())
+        self.transit_cb_data = self.make_transit_cb_data()
+        self.transit_inc_by_mode_data = self.make_transit_inc_by_mode_data()
 
-        return [inputs_plots, scores_plots, outputs_mode_plots, outputs_congestion_plots, outputs_los_plots, outputs_transitcb_plots, outputs_sustainability_plots]
+        self.sustainability_25pm_per_mode_data = self.make_sustainability_25pm_per_mode_data()
 
     def splitting_min_max(self, df, name_column):
         """ Parsing and splitting the ranges in the "age" (or "income") columns into two new columns:
@@ -169,7 +153,7 @@ class Scenario():
 
         return df
 
-    def plot_normalized_scores(self):
+    def make_normalized_scores_data(self):
         scores = self.scores_df
         scores = scores.loc[:,["Component Name","Weighted Score"]]
         scores.set_index("Component Name", inplace=True)
@@ -188,24 +172,9 @@ class Scenario():
         max_score = max(scores['Weighted Score'].max(), 1.0) * 1.1
 
         data = scores.to_dict(orient='list')
-        source = ColumnDataSource(data=data)
+        return data
 
-        p = figure(x_range=(min_score, max_score), y_range=CATEGORIES[::-1], 
-                   plot_height=350, plot_width=1200, title="Weighted subscores and Submission score - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-        p.hbar(y='Component Name', height=0.5, 
-               left=0,
-               right='Weighted Score',
-               source=source,
-               color='color') 
-
-        p.xaxis.axis_label = 'Weighted Score'
-        p.yaxis.axis_label = 'Score Component'
-
-        return p
-
-    def plot_fleetmix_input(self):
+    def make_fleetmix_input_data(self):
 
         fleet_mix = self.fleet_df
 
@@ -243,25 +212,15 @@ class Scenario():
         fleet_mix.reset_index(inplace=True, drop=True)
 
         data = fleet_mix.to_dict(orient='list')
-        source = ColumnDataSource(data=data)
+        return data 
 
-        p = figure(x_range=BUSES_LIST, y_range=[str(route_id) for route_id in ROUTE_IDS], 
-                   plot_height=350, plot_width=600, title="Bus fleet mix - {}".format(self.name),
-                   toolbar_location=None, tools="")
+    def make_routesched_input_data(self):
 
-        p.circle(x='vehicleTypeId', y='routeId', source=source, size=8)
-
-        p.xaxis.axis_label = 'Bus Type'
-        p.yaxis.axis_label = 'Bus Route'
-
-        return p
-
-    def plot_routesched_input(self):
         frequency = self.frequency_df
         frequency["route_id"] = frequency["route_id"].astype(str)
 
         # Add all missing routes (the ones that were not changed) in the DF so that they appear int he plot
-        df = pd.DataFrame([0, 0, 0, 1]).T
+        df = pd.DataFrame([0, 0, 24*3600, 0]).T
         df.columns = ["route_id", "start_time", "end_time", "headway_secs"]
 
         for route in ROUTE_IDS:
@@ -277,38 +236,25 @@ class Scenario():
 
         palette_dict = dict(zip(ROUTE_IDS, (Category20[20][::2] + Category20[20][1::2])[:len(ROUTE_IDS)]))
 
-        p = figure(x_range=(0, 24), y_range=(0, 2), 
-                   plot_height=350, plot_width=600, title="Frequency adjustment - {}".format(self.name),
-                   toolbar_location=None, tools="")
+        line_data=dict( 
+            xs=[[f_row['start_time'], f_row['end_time']] for i, f_row in frequency.iterrows()], 
+            ys=[[f_row['headway_secs'], f_row['headway_secs']] for i, f_row in frequency.iterrows()],
+            color=[palette_dict[i] for i, f_row in frequency.iterrows()],
+            name=[i for i, f_row in frequency.iterrows()]
+        )
+        start_data=dict( 
+            xs=[f_row['start_time'] for i, f_row in frequency.iterrows()], 
+            ys=[f_row['headway_secs'] for i, f_row in frequency.iterrows()],
+            color=[palette_dict[i] for i, f_row in frequency.iterrows()]
+        )
+        end_data=dict( 
+            xs=[f_row['end_time'] for i, f_row in frequency.iterrows()], 
+            ys=[f_row['headway_secs'] for i, f_row in frequency.iterrows()],
+            color=[palette_dict[i] for i, f_row in frequency.iterrows()]
+        )
+        return line_data, start_data, end_data
 
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Bus Route')
-
-        for i, f_row in frequency.iterrows():
-            p.line(x=[f_row['start_time'], f_row['end_time']],
-                   y=[f_row['headway_secs'], f_row['headway_secs']],
-                   line_color=palette_dict[i],
-                   line_width=4,
-                   legend=i)
-            if f_row['headway_secs'] != 0:
-                p.square(x=[f_row['start_time'], f_row['end_time']],
-                         y=[f_row['headway_secs'], f_row['headway_secs']],
-                         fill_color=palette_dict[i],
-                         line_color=palette_dict[i],
-                         size=8)
-
-        p.xaxis.axis_label = 'Hour of day'
-        p.yaxis.axis_label = 'Headway [h]'
-        p.xaxis.ticker = BasicTicker(max_interval=4)
-        p.xgrid.ticker = BasicTicker(max_interval=4)
-        p.legend.label_text_font_size = '8pt'
-
-        new_legend = p.legend[0]
-        p.legend[0].plot = None
-        p.add_layout(new_legend, 'right')
-
-        return p
-
-    def plot_fares_input(self, max_fare=10, max_age=120):
+    def make_fares_input_data(self, max_fare=10, max_age=120):
         fares = self.fares_df
 
         fares["age"] = fares["age"].astype(str)
@@ -335,39 +281,10 @@ class Scenario():
         fares = fares.drop(labels=["age"], axis=1)
         fares = fares.sort_values(by=["amount", "routeId"])
         data = fares.to_dict(orient='list')
-        source = ColumnDataSource(data=data)
+        return data 
 
-        mapper = LinearColorMapper(palette=Plasma256[:120:-1], low=0.0, high=max_fare)
+    def make_modeinc_input_data(self, max_incentive=50, max_age=120, max_income=150000):
 
-        p = figure(x_range=(0, max_age), y_range=ROUTE_IDS, 
-                   plot_height=350, plot_width=475, title="Mass transit fares - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-        p.hbar(y='routeId', height=0.5, 
-               left='min_age',
-               right='max_age',
-               source=source,
-               color=transform('amount', mapper)) 
-
-        p.xaxis.axis_label = 'Age'
-        p.yaxis.axis_label = 'Bus Route'
-
-        color_bar = ColorBar(color_mapper=mapper, ticker=BasicTicker(),
-                     label_standoff=12, border_line_color=None, location=(0,0))
-
-        color_bar_plot = figure(title="Fare Amount [$]",
-                                title_location="right", 
-                                height=350, width=125, 
-                                toolbar_location=None, tools="", min_border=0, 
-                                outline_line_color=None)
-
-        color_bar_plot.add_layout(color_bar, 'right')
-        color_bar_plot.title.align="center"
-        color_bar_plot.title.text_font_size = '10pt'
-
-        return row(p, color_bar_plot)
-
-    def plot_modeinc_input(self, max_incentive=50, max_age=120, max_income=150000):
         incentives = self.incentives_df
         incentives["amount"] = incentives["amount"].astype(float)
 
@@ -392,55 +309,9 @@ class Scenario():
 
         incentives = incentives.sort_values(by=["amount", "mode"])
         data = incentives.to_dict(orient='list')
-        source = ColumnDataSource(data=data)
+        return data
 
-        mapper = LinearColorMapper(palette=Plasma256[:120:-1], low=0.0, high=max_incentive)
-
-        p1 = figure(x_range=(0, max_age), y_range=modes, 
-                   plot_height=175, plot_width=475, title="Incentives by age group - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-        p1.hbar(y='mode', height=0.5, 
-               left='min_age',
-               right='max_age',
-               source=source,
-               color=transform('amount', mapper)) 
-
-        p1.xaxis.axis_label = 'Age'
-        p1.yaxis.axis_label = 'Mode Choice'
-
-        p2 = figure(x_range=(0, max_income), y_range=modes, 
-                   plot_height=175, plot_width=475, title="Incentives by income group - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-        p2.hbar(y='mode', height=0.5, 
-               left='min_income',
-               right='max_income',
-               source=source,
-               color=transform('amount', mapper)) 
-
-        p2.xaxis[0].formatter = NumeralTickFormatter(format="$0a")
-        p2.xaxis.axis_label = 'Income'
-        p2.yaxis.axis_label = 'Mode Choice'
-
-        p = column(p1, p2)
-
-        color_bar = ColorBar(color_mapper=mapper, ticker=BasicTicker(),
-                     label_standoff=12, border_line_color=None, location=(0,0))
-
-        color_bar_plot = figure(title="Incentive Amount [$/person-trip]",
-                                title_location="right", 
-                                height=350, width=125, 
-                                toolbar_location=None, tools="", min_border=0, 
-                                outline_line_color=None)
-
-        color_bar_plot.add_layout(color_bar, 'right')
-        color_bar_plot.title.align="center"
-        color_bar_plot.title.text_font_size = '10pt'
-
-        return row(p, color_bar_plot)
-
-    def plot_mode_pie_chart(self, mode_choice, title):
+    def make_mode_pie_chart_data(self, mode_choice):
 
         # Select columns w/ modes
         mode_choice = mode_choice.iloc[-1].drop('iterations').reset_index(name='value').rename(columns={'index': 'Mode'})
@@ -460,34 +331,13 @@ class Scenario():
         mode_choice = mode_choice.sort_values('Mode_order')
 
         mode_choice['color'] = Category10[len(mode_choice)]
-
-        p = figure(plot_height=350, title=title.format(self.name), toolbar_location=None,
-                   x_range=(-0.5, 1.0))
-
-        p.circle(-0.5, 1.0, size=0.00000001, color="#ffffff", legend='Mode Choice')
-
-        p.wedge(x=0, y=1, radius=0.4,
-                start_angle='start_angle', end_angle='end_angle',
-                line_color="white", fill_color='color', legend='Mode', source=mode_choice)
-
+            
         mode_choice["label"] = mode_choice.apply(lambda x: '{}%'.format(round(x['perc'], 1)), axis=1)
         mode_choice["label"] = mode_choice["label"].str.pad(30, side = "left")
-        source = ColumnDataSource(mode_choice)
+        data = mode_choice.to_dict(orient='list')
+        return data
 
-        labels = LabelSet(x=0, y=1, text='label', level='glyph',
-                          angle='start_angle', text_font_size='8pt', text_color='white',
-                          source=source, render_mode='canvas')
-
-        p.add_layout(labels)
-
-        p.axis.axis_label=None
-        p.axis.visible=False
-        p.legend.label_text_font_size = '8pt'
-        p.grid.grid_line_color = None
-
-        return p
-
-    def plot_mode_choice_by_time(self):
+    def make_mode_choice_by_time_data(self):
         
         mode_choice_by_hour = self.mode_choice_hourly_df.reset_index().dropna()
         
@@ -515,39 +365,11 @@ class Scenario():
 
         max_choice = mode_choice_by_hour.sum(axis=1).max() * 1.1
 
-        colors = Category10[len(self.modes)]
-
         data = mode_choice_by_hour.reset_index().to_dict(orient='list')
-        source = ColumnDataSource(data=data)
+        return data 
 
-        # plot
-        p = figure(x_range=hours, y_range=(0, max_choice), 
-                   plot_height=350, plot_width=600, title="Mode choice by hour - {}".format(self.name),
-                   toolbar_location=None, tools="")
+    def make_mode_choice_by_income_group_data(self):
 
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Trip Mode')
-
-        p.vbar_stack(self.modes,
-                     x='hours',
-                     width=0.85,
-                     source=source,
-                     color=colors,
-                     legend=[value(x) for x in self.modes])
-        
-        p.xaxis.axis_label = 'Hour of day'
-        p.yaxis.axis_label = 'Number of trips'
-        p.legend.orientation = "vertical"
-        p.legend.label_text_font_size = '8pt'
-        p.legend.location = 'top_left'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        # new_legend = p.legend[0]
-        # p.legend[0].plot = None
-        # p.add_layout(new_legend, 'right')
-
-        return p
-
-    def plot_mode_choice_by_income_group(self):
         persons_cols = ['PID', 'income']
         trips_cols = ['PID', 'realizedTripMode']
         people_income_mode = self.persons_df[persons_cols].merge(self.trips_df[trips_cols], on=['PID'])
@@ -565,41 +387,11 @@ class Scenario():
             columns='income_group', 
             values='PID').reset_index().rename(columns={'index':'realizedTripMode'})
         data = grouped.to_dict(orient='list')
-        idx = grouped['realizedTripMode'].tolist()
 
-        source = ColumnDataSource(data=data)
+        return data 
 
-        p = figure(x_range=idx, y_range=(0, ymax), plot_height=350, title="Mode choice by income group - {}".format(self.name),
-                   toolbar_location=None, tools="")
+    def make_mode_choice_by_age_group_data(self):
 
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Income Group')
-
-        nbins = len(bins)
-        total_width = 0.85
-        bin_width = total_width / nbins
-        bin_loc = -total_width / 2 + bin_width / 2
-        palette = Category10[nbins]
-
-        for i, bin_i in enumerate(bins):
-            p.vbar(x=dodge('realizedTripMode', bin_loc, range=p.x_range), top=bin_i, width=bin_width-0.03, source=source,
-                   color=palette[i], legend=value(bin_i))
-            bin_loc += bin_width
-
-        p.x_range.range_padding = bin_width
-        p.xgrid.grid_line_color = None
-        p.legend.orientation = "vertical"
-        p.legend.label_text_font_size = '8pt'
-        p.xaxis.axis_label = 'Mode Choice'
-        p.yaxis.axis_label = 'Number of People'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        new_legend = p.legend[0]
-        p.legend[0].plot = None
-        p.add_layout(new_legend, 'right')
-
-        return p
-
-    def plot_mode_choice_by_age_group(self):
         persons_cols = ['PID', 'Age']
         trips_cols = ['PID', 'realizedTripMode']
         people_age_mode = self.persons_df[persons_cols].merge(self.trips_df[trips_cols], on=['PID'])
@@ -617,41 +409,9 @@ class Scenario():
             columns='age_group', 
             values='PID').reset_index().rename(columns={'index':'realizedTripMode'})
         data = grouped.to_dict(orient='list')
-        idx = grouped['realizedTripMode'].tolist()
+        return data 
 
-        source = ColumnDataSource(data=data)
-
-        p = figure(x_range=idx, y_range=(0, ymax), plot_height=350, title="Mode choice by age group - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Age Group')
-
-        nbins = len(bins)
-        total_width = 0.85
-        bin_width = total_width / nbins
-        bin_loc = -total_width / 2 + bin_width / 2
-        palette = Category10[nbins]
-
-        for i, bin_i in enumerate(bins):
-            p.vbar(x=dodge('realizedTripMode', bin_loc, range=p.x_range), top=bin_i, width=bin_width-0.03, source=source,
-                   color=palette[i], legend=value(bin_i))
-            bin_loc += bin_width
-
-        p.x_range.range_padding = bin_width
-        p.xgrid.grid_line_color = None
-        p.legend.orientation = "vertical"
-        p.legend.label_text_font_size = '8pt'
-        p.xaxis.axis_label = 'Mode Choice'
-        p.yaxis.axis_label = 'Number of People'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        new_legend = p.legend[0]
-        p.legend[0].plot = None
-        p.add_layout(new_legend, 'right')
-
-        return p
-
-    def plot_mode_choice_by_distance(self):
+    def make_mode_choice_by_distance_data(self):
         
         mode_df = self.trips_df[['Trip_ID', 'Distance_m', 'realizedTripMode']]
         mode_df.loc[:,'Distance_miles'] = mode_df.loc[:,'Distance_m'] * 0.000621371
@@ -677,36 +437,9 @@ class Scenario():
         colors = Category10[len(self.modes)]
 
         data = for_plot.to_dict(orient='list')
-        source = ColumnDataSource(data=data)
+        return data 
 
-        # plot
-
-        p = figure(x_range=bins, y_range=(0, max_trips), 
-                   plot_height=350, title="Mode choice by trip distance - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Trip Mode')
-
-        p.vbar_stack(self.modes,
-                     x='Trip Distance (miles)', 
-                     width=0.5, 
-                     source=source,
-                     color=colors,
-                     legend=[value(x) for x in self.modes])
-        
-        p.xaxis.axis_label = 'Trip Distance (miles)'
-        p.yaxis.axis_label = 'Number of Trips'
-        p.legend.orientation = "vertical"
-        p.legend.label_text_font_size = '8pt'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        new_legend = p.legend[0]
-        p.legend[0].plot = None
-        p.add_layout(new_legend, 'right')
-
-        return p
-
-    def plot_congestion_travel_time_by_mode(self):
+    def make_congestion_travel_time_by_mode_data(self):
 
         travel_time = pd.DataFrame(self.travel_times_df.set_index("TravelTimeMode\Hour").mean(axis=1)).T
 
@@ -717,23 +450,15 @@ class Scenario():
 
         palette = Category10[len(self.modes)]
 
-        data = travel_time.to_dict(orient='list')
+        data=dict( 
+            x=self.modes,
+            y=[travel_time[mode] for mode in self.modes],
+            color=palette,
+        )
+        return data
 
-        # Plot
-        p = figure(x_range=self.modes, y_range=(0, max_time), 
-                   plot_height=350, plot_width=700, title="Average travel time per trip and by mode - {}".format(self.name),
-                   toolbar_location=None, tools="")
+    def make_congestion_travel_time_per_passenger_trip_data(self):
 
-
-        p.vbar(x=self.modes, top=[data[m] for m in self.modes], width=0.8, color=palette)
-        
-        p.xaxis.axis_label = 'Mode'
-        p.yaxis.axis_label = 'Travel time [min]'
-        p.xaxis.major_label_orientation = math.pi / 6
-        
-        return p
-
-    def plot_congestion_travel_time_per_passenger_trip(self):
         travel_time = self.travel_times_df.set_index("TravelTimeMode\Hour").T.reset_index()
         
         travel_time.rename(columns={"ride_hail": "OnDemand_ride"}, inplace=True)
@@ -749,34 +474,10 @@ class Scenario():
         max_time = travel_time.max().max() * 1.1 
 
         data = travel_time.to_dict(orient='list')
-        source = ColumnDataSource(data=data)
+        return data
 
-        p = figure(x_range=hours, y_range=(0, max_time), 
-                   plot_height=350, plot_width=800, title="Average travel time per passenger-trip over the day - {}".format(self.name),
-                   toolbar_location=None, tools="")
+    def make_congestion_miles_travelled_per_mode_data(self):
 
-        nbins = len(self.modes)
-        total_width = 0.85
-        bin_width = total_width / nbins
-        bin_loc = -total_width / 2 + bin_width / 2
-        palette = Category10[nbins]
-
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Trip Mode')
-
-        for i, mode_i in enumerate(self.modes):
-            p.vbar(x=dodge('index', bin_loc, range=p.x_range), top=mode_i, width=bin_width-0.04, source=source,
-                   color=palette[i], legend=value(mode_i))
-            bin_loc += bin_width
-
-        p.xaxis.axis_label = 'Hour of day'
-        p.yaxis.axis_label = 'Travel time [min]'
-        p.legend.label_text_font_size = '8pt'
-        p.legend.location = 'top_left'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        return p
-
-    def plot_congestion_miles_travelled_per_mode(self):
         # get_vmt_dataframe:
         vmt_walk = round(
             self.paths_df[self.paths_df["mode"] == "walk"]["length"].apply(lambda x: x * 0.000621371).sum(), 0)
@@ -793,23 +494,12 @@ class Scenario():
         max_vmt = vmt['value'].max() * 1.1
 
         palette = Category10[len(modes)]
+        data = dict(modes=modes, vmt=[vmt_bus, vmt_car, vmt_on_demand, vmt_walk], color=palette)
+        return data
+        # source = ColumnDataSource(data=dict(modes=modes, vmt=[vmt_bus, vmt_car, vmt_on_demand, vmt_walk], color=palette))
+        # return source 
 
-        # Plot
-        p = figure(x_range=modes, y_range=(0, max_vmt), 
-                   plot_height=350, plot_width=700, title="Daily miles travelled per mode - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-
-        p.vbar(x=modes, top=[vmt_bus, vmt_car, vmt_on_demand, vmt_walk], color=palette, width=0.8)
-        
-        p.xaxis.axis_label = 'Mode'
-        p.yaxis.axis_label = 'Miles travelled'
-        p.yaxis[0].formatter = NumeralTickFormatter(format="0a")
-        p.xaxis.major_label_orientation = math.pi / 6
-        
-        return p
-
-    def plot_congestion_bus_vmt_by_ridership(self, seatingCapacity=50):
+    def make_congestion_bus_vmt_by_ridership_data(self, seatingCapacity=50):
         columns = ["numPassengers", "length", "departureTime", "arrivalTime"]
         vmt_bus_ridership = self.paths_df[self.paths_df["mode"] == "bus"][columns]
         # Split the travels by hour of the day
@@ -858,37 +548,10 @@ class Scenario():
         colors = Category10[len(bins)]
 
         data = vmt_bus_ridership.reset_index().to_dict(orient='list')
+        return data 
 
-        source = ColumnDataSource(data=data)
+    def make_congestion_on_demand_vmt_by_phases_data(self):
 
-        # plot
-        p = figure(x_range=HOURS, y_range=(0, ymax), 
-                   plot_height=350, plot_width=600, title="Bus vehicle miles travelled by ridership by time of day - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Ridership')
-
-        p.vbar_stack(bins,
-                     x='Hour',
-                     width=0.85,
-                     source=source,
-                     color=colors,
-                     legend=[value(x) for x in bins])
-        
-        p.xaxis.axis_label = 'Hour of day'
-        p.yaxis.axis_label = 'Vehicle miles travelled'
-        p.yaxis[0].formatter = NumeralTickFormatter(format="0a")
-        p.legend.orientation = "vertical"
-        p.legend.label_text_font_size = '8pt'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        new_legend = p.legend[0]
-        p.legend[0].plot = None
-        p.add_layout(new_legend, 'right')
-        
-        return p
-
-    def plot_congestion_on_demand_vmt_by_phases(self):
         columns = ["numPassengers", "departureTime", "length"]
         vmt_on_demand = self.paths_df[self.paths_df["vehicle"].str.contains("rideHailVehicle")][columns]
         # Split the travels by hour of the day
@@ -915,33 +578,9 @@ class Scenario():
         colors = Category10[10][:len(driving_states)]
 
         data = vmt_on_demand.reset_index().to_dict(orient='list')
-        source = ColumnDataSource(data=data)
+        return data 
 
-        # plot
-        p = figure(x_range=HOURS, y_range=(0, ymax), 
-                   plot_height=350, plot_width=700, title="Vehicle miles travelled by on-demand ride vehicles by driving state - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Driving State')
-
-        p.vbar_stack(driving_states,
-                     x='Hour', 
-                     width=0.85, 
-                     source=source,
-                     color=colors,
-                     legend=[value(x) for x in driving_states])
-        
-        p.xaxis.axis_label = 'Hour of day'
-        p.yaxis.axis_label = 'Vehicle miles travelled'
-        p.yaxis[0].formatter = NumeralTickFormatter(format="0a")
-        p.legend.location = "top_left"
-        p.legend.orientation = "vertical"
-        p.legend.label_text_font_size = '8pt'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        return p
-
-    def plot_congestion_travel_speed(self):
+    def make_congestion_travel_speed_data(self):
 
         trips = self.trips_df[self.trips_df['Duration_sec'] > 0]
         
@@ -968,38 +607,10 @@ class Scenario():
         grouped = grouped.reset_index().rename(columns={'index':'Start time interval (hour)'})
 
         data = grouped.to_dict(orient='list')
-        source = ColumnDataSource(data=data)
-        
-        # plot
-        p = figure(x_range=bins, y_range=(0, max_speed), 
-                   plot_height=350, plot_width=700, title="Average travel speed by time of day per mode - {}".format(self.name),
-                   toolbar_location=None, tools="")
+        return data 
 
-        nbins = len(self.modes)
-        total_width = 0.85
-        bin_width = total_width / nbins
-        bin_loc = -total_width / 2 + bin_width / 2
-        palette = Category10[nbins]
+    def make_los_travel_expenditure_data(self):
 
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Trip Mode')
-
-        for i, mode_i in enumerate(self.modes):
-            p.vbar(x=dodge('Start time interval (hour)', bin_loc, range=p.x_range), top=mode_i, width=bin_width-0.04, source=source,
-                   color=palette[i], legend=value(mode_i))
-            bin_loc += bin_width
-
-        p.xaxis.axis_label = 'Start time interval (hour of day)'
-        p.yaxis.axis_label = 'Average speed (miles per hour)'
-        p.legend.label_text_font_size = '8pt'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        new_legend = p.legend[0]
-        p.legend[0].plot = None
-        p.add_layout(new_legend, 'right')
-
-        return p
-
-    def plot_los_travel_expenditure(self):
         trips = self.trips_df
         trips.loc[:, 'trip_cost'] = np.zeros(trips.shape[0])
 
@@ -1029,37 +640,9 @@ class Scenario():
         grouped = grouped.reset_index().rename(columns={'index':'hour_of_day'})
 
         data = grouped.to_dict(orient='list')
-        source = ColumnDataSource(data=data)
+        return data 
 
-        p = figure(x_range=HOURS, y_range=(0, max_cost), 
-                   plot_height=350, plot_width=600, title="Average travel expenditure per trip and by mode over the day - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-        nbins = len(self.modes)
-        total_width = 0.85
-        bin_width = total_width / nbins
-        bin_loc = -total_width / 2 + bin_width / 2
-        palette = Category10[nbins]
-
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Trip Mode')
-
-        for i, mode_i in enumerate(self.modes):
-            p.vbar(x=dodge('hour_of_day', bin_loc, range=p.x_range), top=mode_i, width=bin_width-0.04, source=source,
-                   color=palette[i], legend=value(mode_i))
-            bin_loc += bin_width
-
-        p.xaxis.axis_label = 'Hour of day'
-        p.yaxis.axis_label = 'Average cost [$]'
-        p.legend.label_text_font_size = '8pt'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        new_legend = p.legend[0]
-        p.legend[0].plot = None
-        p.add_layout(new_legend, 'right')
-
-        return p
-
-    def plot_los_crowding(self):
+    def make_los_crowding_data(self):
 
         columns = ["vehicle", "numPassengers", "departureTime", "arrivalTime", "vehicleType"]
         bus_slice_df = self.paths_df[self.paths_df["mode"] == "bus"][columns]
@@ -1099,37 +682,9 @@ class Scenario():
 
         grouped_data.loc[:, 'route_id'] = grouped_data.loc[:, 'route_id'].astype(str)
         data = grouped_data.to_dict(orient='list')
-        source = ColumnDataSource(data=data)
+        return data 
 
-        p = figure(x_range=ROUTE_IDS, y_range=(0, max_crowding), 
-                   plot_height=350, plot_width=600, title="Average hours of bus crowding by bus route and period of day - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-        nbins = len(labels)
-        total_width = 0.85
-        bin_width = total_width / nbins
-        bin_loc = -total_width / 2 + bin_width / 2
-        palette = Category10[nbins]
-
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Service Period')
-
-        for i, label_i in enumerate(labels):
-            p.vbar(x=dodge('route_id', bin_loc, range=p.x_range), top=label_i, width=bin_width-0.04, source=source,
-                   color=palette[i], legend=value(label_i))
-            bin_loc += bin_width
-
-        p.xaxis.axis_label = 'Bus route'
-        p.yaxis.axis_label = 'Hours of bus crowding'
-        p.legend.label_text_font_size = '8pt'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        new_legend = p.legend[0]
-        p.legend[0].plot = None
-        p.add_layout(new_legend, 'right')
-
-        return p
-
-    def plot_transit_cb(self):
+    def make_transit_cb_data(self):
 
         columns = ["vehicle", "numPassengers", "departureTime", "arrivalTime", "FuelCost", "vehicleType"]
         bus_slice_df = self.paths_df.loc[self.paths_df["mode"] == "bus"][columns]
@@ -1168,37 +723,9 @@ class Scenario():
         colors = Category10[len(cost_labels)]
 
         data = grouped_data.to_dict(orient='list')
-        source = ColumnDataSource(data=data)
-        # if self.name == 'example_run':
-        #     pdb.set_trace()
-        # plot
-        p = figure(x_range=ROUTE_IDS, y_range=(0, max_cost), 
-                   plot_height=350, plot_width=600, title="Costs and Benefits of Mass Transit Level of Service Intervention by bus route - {}".format(self.name),
-                   toolbar_location=None, tools="")
+        return data
 
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Costs and Benefits')
-
-        p.vbar_stack(cost_labels,
-                     x='route_id',
-                     width=0.85,
-                     source=source,
-                     color=colors,
-                     legend=[value(x) for x in cost_labels])
-        
-        p.xaxis.axis_label = 'Bus route'
-        p.yaxis.axis_label = 'Amount [$]'
-        p.yaxis[0].formatter = NumeralTickFormatter(format="$0a")
-        p.legend.orientation = "vertical"
-        p.legend.label_text_font_size = '8pt'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        new_legend = p.legend[0]
-        p.legend[0].plot = None
-        p.add_layout(new_legend, 'right')
-
-        return p
-
-    def plot_transit_inc_by_mode(self):
+    def make_transit_inc_by_mode_data(self):
         
         columns = ['FuelCost', 'Fare', 'Start_time', 'realizedTripMode', 'Incentive']
         trips = self.trips_df[columns]
@@ -1228,37 +755,9 @@ class Scenario():
         grouped = grouped.reset_index().rename(columns={'index':'hour_of_day'})
 
         data = grouped.to_dict(orient='list')
-        source = ColumnDataSource(data=data)
+        return data 
 
-        p = figure(x_range=HOURS, y_range=(0, max_incentives), 
-                   plot_height=350, plot_width=600, title="Total incentives distributed by time of day per mode - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-        nbins = len(self.modes)
-        total_width = 0.85
-        bin_width = total_width / nbins
-        bin_loc = -total_width / 2 + bin_width / 2
-        palette = Category10[nbins]
-
-        p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Trip Mode')
-
-        for i, mode_i in enumerate(self.modes):
-            p.vbar(x=dodge('hour_of_day', bin_loc, range=p.x_range), top=mode_i, width=bin_width-0.04, source=source,
-                   color=palette[i], legend=value(mode_i))
-            bin_loc += bin_width
-
-        p.xaxis.axis_label = 'Hour of day'
-        p.yaxis.axis_label = 'Incentives distributed [$]'
-        p.legend.label_text_font_size = '8pt'
-        p.xaxis.major_label_orientation = math.pi / 6
-
-        new_legend = p.legend[0]
-        p.legend[0].plot = None
-        p.add_layout(new_legend, 'right')
-
-        return p
-
-    def plot_sustainability_25pm_per_mode(self):
+    def make_sustainability_25pm_per_mode_data(self):
         
         columns = ["vehicle", "mode", "length", "departureTime"]
         vmt = self.paths_df[columns]
@@ -1280,20 +779,8 @@ class Scenario():
         max_emissions = emissions['value'].max() * 1.1
         
         palette = Category10[len(modes)]
-
-        p = figure(x_range=modes, y_range=(0, max_emissions), 
-                   plot_height=350, title="Daily PM2.5 emissions per mode - {}".format(self.name),
-                   toolbar_location=None, tools="")
-
-
-        p.vbar(x=modes, top=[emissions_bus, emissions_car, emissions_on_demand], color=palette, width=0.8)
-        
-        p.xaxis.axis_label = 'Mode'
-        p.yaxis.axis_label = 'Emissions [g]'
-        p.xaxis.major_label_orientation = math.pi / 6
-        
-        return p
+        data=dict(modes=modes, emissions=[emissions_on_demand, emissions_car, emissions_bus], color=palette)
+        return data
 
 # TODO:
-# static image upload example
 # add in xml parser function
