@@ -591,7 +591,8 @@ def plot_transit_inc_by_mode(source, num=1):
 
 def plot_sustainability_25pm_per_mode(source, num=1):
  
-    p = figure(x_range=MODES, y_range=(0, 300), 
+    modes = ['OnDemand_ride', 'car', 'bus']
+    p = figure(x_range=modes, y_range=(0, 300), 
                plot_height=350, title="Daily PM2.5 emissions per mode - Scenario {}".format(num),
                toolbar_location=None, tools="")
 
