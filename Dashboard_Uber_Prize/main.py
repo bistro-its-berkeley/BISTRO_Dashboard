@@ -541,19 +541,19 @@ def plot_transit_cb(costs_source, benefits_source, num=1):
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Costs and Benefits')
 
-    p.vbar_stack(costs_labels,
-                 x='route_id',
-                 width=0.85,
-                 source=costs_source,
-                 color=Category10[3][:2],
-                 legend=[value(x) for x in costs_labels])
-
     p.vbar_stack(benefits_label,
                  x='route_id',
                  width=0.85,
                  source=benefits_source,
                  color=Category10[3][2],
                  legend=value("Fare"))
+
+    p.vbar_stack(costs_labels,
+                 x='route_id',
+                 width=0.85,
+                 source=costs_source,
+                 color=Category10[3][:2],
+                 legend=[value(x) for x in costs_labels])
     
     p.xaxis.axis_label = 'Bus route'
     p.yaxis.axis_label = 'Amount [$]'

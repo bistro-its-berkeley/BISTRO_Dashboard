@@ -696,7 +696,6 @@ class Run():
 
         columns = ["Veh", "Fare"]
         bus_fare_df = self.legs_df.loc[self.legs_df["Mode"] == "bus"][columns]
-        bus_fare_df.loc[:, "Fare"] *= -1
 
         bus_fare_df.loc[:, "route_id"] = bus_fare_df['Veh'].apply(
             lambda x: self.trip_to_route[x.split(":")[-1].split('-')[0].split('-')[0]])
@@ -723,6 +722,8 @@ class Run():
         grouped_data.sort_values('route_id', inplace=True)
 
         grouped_data.loc[:, 'route_id'] = grouped_data.loc[:, 'route_id'].astype(str)
+        grouped_data.loc[:, 'OperationalCosts'] *= -1
+        grouped_data.loc[:, 'FuelCost'] *= -1
 
         colors = Category10[len(labels)]
 
