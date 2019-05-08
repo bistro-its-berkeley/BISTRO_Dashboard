@@ -13,7 +13,7 @@ from bokeh.palettes import Category10, Category20, Plasma256, YlOrRd
 from bokeh.plotting import figure, show
 from bokeh.transform import dodge, transform
 
-from scenario import Scenario
+from run import Run
 
 CATEGORIES = [
     'Accessibility: Number of secondary locations accessible within 15 minutes',
@@ -35,7 +35,7 @@ MODES = ['OnDemand_ride', 'car', 'drive_transit', 'walk', 'walk_transit']
 def plot_normalized_scores(source, num=1):
     
     p = figure(x_range=(0, 10), y_range=CATEGORIES[::-1], 
-               plot_height=350, plot_width=1200, title="Weighted subscores and Submission score - Scenario {}".format(num),
+               plot_height=350, plot_width=1200, title="Weighted subscores and Submission score - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.hbar(y='Component Name', height=0.5, 
@@ -52,7 +52,7 @@ def plot_normalized_scores(source, num=1):
 def plot_fleetmix_input(source, num=1):
 
     p = figure(x_range=BUSES_LIST, y_range=[str(route_id) for route_id in ROUTE_IDS], 
-               plot_height=350, plot_width=600, title="Bus fleet mix - Scenario {}".format(num),
+               plot_height=350, plot_width=600, title="Bus fleet mix - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.circle(x='vehicleTypeId', y='routeId', source=source, size=8)
@@ -65,7 +65,7 @@ def plot_fleetmix_input(source, num=1):
 def plot_routesched_input(line_source, start_source, end_source, num=1):
 
     p = figure(x_range=(0, 24), y_range=(0, 2), 
-               plot_height=350, plot_width=600, title="Frequency adjustment - Scenario {}".format(num),
+               plot_height=350, plot_width=600, title="Frequency adjustment - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Bus Route')
@@ -91,7 +91,7 @@ def plot_fares_input(source, max_fare=10, max_age=120, num=1):
     mapper = LinearColorMapper(palette=Plasma256[:120:-1], low=0.0, high=max_fare)
 
     p = figure(x_range=(0, max_age), y_range=ROUTE_IDS, 
-               plot_height=350, plot_width=475, title="Mass transit fares - Scenario {}".format(num),
+               plot_height=350, plot_width=475, title="Mass transit fares - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.hbar(y='routeId', height=0.5, 
@@ -124,7 +124,7 @@ def plot_modeinc_input(source, max_incentive=50, max_age=120, max_income=150000,
     inc_modes = ['OnDemand_ride', 'drive_transit', 'walk_transit']
 
     p1 = figure(x_range=(0, max_age), y_range=inc_modes, 
-               plot_height=175, plot_width=475, title="Incentives by age group - Scenario {}".format(num),
+               plot_height=175, plot_width=475, title="Incentives by age group - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p1.hbar(y='mode', height=0.5, 
@@ -137,7 +137,7 @@ def plot_modeinc_input(source, max_incentive=50, max_age=120, max_income=150000,
     p1.yaxis.axis_label = 'Mode Choice'
 
     p2 = figure(x_range=(0, max_income), y_range=inc_modes, 
-               plot_height=175, plot_width=475, title="Incentives by income group - Scenario {}".format(num),
+               plot_height=175, plot_width=475, title="Incentives by income group - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p2.hbar(y='mode', height=0.5, 
@@ -169,7 +169,7 @@ def plot_modeinc_input(source, max_incentive=50, max_age=120, max_income=150000,
 
 def plot_mode_pie_chart(source, choice_type='planned', num=1):
 
-    title = 'Overall {} mode choice - Scenario {}'.format(choice_type, num)
+    title = 'Overall {} mode choice - Run {}'.format(choice_type, num)
     p = figure(plot_height=350, title=title, toolbar_location=None,
                x_range=(-0.5, 1.0))
 
@@ -195,7 +195,7 @@ def plot_mode_pie_chart(source, choice_type='planned', num=1):
 def plot_mode_choice_by_time(source, num=1):
 
     p = figure(x_range=HOURS, y_range=(0, 6000), 
-               plot_height=350, plot_width=600, title="Mode choice by hour - Scenario {}".format(num),
+               plot_height=350, plot_width=600, title="Mode choice by hour - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Trip Mode')
@@ -224,7 +224,7 @@ def plot_mode_choice_by_income_group(source, num=1):
 
     bins = ['[$0, $10k)', '[$10k, $25k)', '[$25k, $50k)', '[$50k, $75k)', '[$75k, $100k)', '[$100k, inf)']
 
-    p = figure(x_range=MODES, y_range=(0, 12000), plot_height=350, title="Mode choice by income group - Scenario {}".format(num),
+    p = figure(x_range=MODES, y_range=(0, 12000), plot_height=350, title="Mode choice by income group - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Income Group')
@@ -259,7 +259,7 @@ def plot_mode_choice_by_age_group(source, num=1):
     edges = [0, 18, 30, 40, 50, 60, float('inf')]
     bins = ['[{}, {})'.format(edges[i], edges[i+1]) for i in range(len(edges)-1)]
 
-    p = figure(x_range=MODES, y_range=(0, 8000), plot_height=350, title="Mode choice by age group - Scenario {}".format(num),
+    p = figure(x_range=MODES, y_range=(0, 8000), plot_height=350, title="Mode choice by age group - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Age Group')
@@ -295,7 +295,7 @@ def plot_mode_choice_by_distance(source, num=1):
     bins = ['[{}, {})'.format(edges[i], edges[i+1]) for i in range(len(edges)-1)]
 
     p = figure(x_range=bins, y_range=(0, 7000), 
-               plot_height=350, title="Mode choice by trip distance - Scenario {}".format(num),
+               plot_height=350, title="Mode choice by trip distance - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Trip Mode')
@@ -322,7 +322,7 @@ def plot_mode_choice_by_distance(source, num=1):
 def plot_congestion_travel_time_by_mode(source, num=1):
 
     p = figure(x_range=MODES, y_range=(0, 45), 
-               plot_height=350, plot_width=700, title="Average travel time per trip and by mode - Scenario {}".format(num),
+               plot_height=350, plot_width=700, title="Average travel time per trip and by mode - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.vbar(x='x', top='y', width=0.8, source=source, color='color')
@@ -336,7 +336,7 @@ def plot_congestion_travel_time_by_mode(source, num=1):
 def plot_congestion_travel_time_per_passenger_trip(source, num=1):
 
     p = figure(x_range=HOURS, y_range=(0, 150), 
-               plot_height=350, plot_width=800, title="Average travel time per passenger-trip over the day - Scenario {}".format(num),
+               plot_height=350, plot_width=800, title="Average travel time per passenger-trip over the day - Run {}".format(num),
                toolbar_location=None, tools="")
 
     nbins = len(MODES)
@@ -363,7 +363,7 @@ def plot_congestion_travel_time_per_passenger_trip(source, num=1):
 def plot_congestion_miles_travelled_per_mode(source, num=1):
 
     p = figure(x_range=MODES, y_range=(0, 70000), 
-               plot_height=350, plot_width=700, title="Daily miles travelled per mode - Scenario {}".format(num),
+               plot_height=350, plot_width=700, title="Daily miles travelled per mode - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.vbar(x='modes', top='vmt', color='color', source=source, width=0.8)
@@ -385,7 +385,7 @@ def plot_congestion_bus_vmt_by_ridership(source, seatingCapacity=50, num=1):
         'crowded\n(> seating capacity)'
     ]
     p = figure(x_range=HOURS, y_range=(0, 800000), 
-               plot_height=350, plot_width=600, title="Bus vehicle miles travelled by ridership by time of day - Scenario {}".format(num),
+               plot_height=350, plot_width=600, title="Bus vehicle miles travelled by ridership by time of day - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Ridership')
@@ -414,7 +414,7 @@ def plot_congestion_on_demand_vmt_by_phases(source, num=1):
 
     driving_states = ["fetch", "fare"]
     p = figure(x_range=HOURS, y_range=(0, 1000000), 
-               plot_height=350, plot_width=700, title="Vehicle miles travelled by on-demand ride vehicles by driving state - Scenario {}".format(num),
+               plot_height=350, plot_width=700, title="Vehicle miles travelled by on-demand ride vehicles by driving state - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Driving State')
@@ -442,7 +442,7 @@ def plot_congestion_travel_speed(source, num=1):
     bins = ['[{}, {})'.format(edges[i], edges[i+1]) for i in range(len(edges)-1)]
 
     p = figure(x_range=bins, y_range=(0, 20), 
-               plot_height=350, plot_width=700, title="Average travel speed by time of day per mode - Scenario {}".format(num),
+               plot_height=350, plot_width=700, title="Average travel speed by time of day per mode - Run {}".format(num),
                toolbar_location=None, tools="")
 
     nbins = len(MODES)
@@ -472,7 +472,7 @@ def plot_congestion_travel_speed(source, num=1):
 def plot_los_travel_expenditure(source, num=1):
 
     p = figure(x_range=HOURS, y_range=(0, 1), 
-               plot_height=350, plot_width=600, title="Average travel expenditure per trip and by mode over the day - Scenario {}".format(num),
+               plot_height=350, plot_width=600, title="Average travel expenditure per trip and by mode over the day - Run {}".format(num),
                toolbar_location=None, tools="")
 
     nbins = len(MODES)
@@ -501,9 +501,10 @@ def plot_los_travel_expenditure(source, num=1):
 
 def plot_los_crowding(source, num=1):
 
-    labels = ["Early Morning", "AM Peak", "Midday", "PM Peak", "Late Evening"]
+    # AM peak = 7am-10am, PM Peak = 5pm-8pm, Early Morning, Midday, Late Evening = in between
+    labels = ["Early Morning (12a-7a)", "AM Peak (7a-10a)", "Midday (10a-5p)", "PM Peak (5p-8p)", "Late Evening (8p-12a)"]
     p = figure(x_range=ROUTE_IDS, y_range=(0, 10), 
-               plot_height=350, plot_width=600, title="Average hours of bus crowding by bus route and period of day - Scenario {}".format(num),
+               plot_height=350, plot_width=600, title="Average hours of bus crowding by bus route and period of day - Run {}".format(num),
                toolbar_location=None, tools="")
 
     nbins = len(labels)
@@ -530,21 +531,29 @@ def plot_los_crowding(source, num=1):
 
     return p
 
-def plot_transit_cb(source, num=1):
+def plot_transit_cb(costs_source, benefits_source, num=1):
 
-    cost_labels = ["OperationalCosts", "FuelCost", "Fare"]
-    p = figure(x_range=ROUTE_IDS, y_range=(0, 5e6), 
-               plot_height=350, plot_width=600, title="Costs and Benefits of Mass Transit Level of Service Intervention by bus route - Scenario {}".format(num),
+    costs_labels = ["OperationalCosts", "FuelCost"]
+    benefits_label = ["Fare"]
+    p = figure(x_range=ROUTE_IDS, y_range=(-4e6, 4e6), 
+               plot_height=350, plot_width=600, title="Costs and Benefits of Mass Transit Level of Service Intervention by bus route - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Costs and Benefits')
 
-    p.vbar_stack(cost_labels,
+    p.vbar_stack(costs_labels,
                  x='route_id',
                  width=0.85,
-                 source=source,
-                 color=Category10[len(cost_labels)],
-                 legend=[value(x) for x in cost_labels])
+                 source=costs_source,
+                 color=Category10[3][:2],
+                 legend=[value(x) for x in costs_labels])
+
+    p.vbar_stack(benefits_label,
+                 x='route_id',
+                 width=0.85,
+                 source=benefits_source,
+                 color=Category10[3][2],
+                 legend=value("Fare"))
     
     p.xaxis.axis_label = 'Bus route'
     p.yaxis.axis_label = 'Amount [$]'
@@ -562,7 +571,7 @@ def plot_transit_cb(source, num=1):
 def plot_transit_inc_by_mode(source, num=1):
 
     p = figure(x_range=HOURS, y_range=(0, 500), 
-               plot_height=350, plot_width=600, title="Total incentives distributed by time of day per mode - Scenario {}".format(num),
+               plot_height=350, plot_width=600, title="Total incentives distributed by time of day per mode - Run {}".format(num),
                toolbar_location=None, tools="")
 
     nbins = len(MODES)
@@ -593,7 +602,7 @@ def plot_sustainability_25pm_per_mode(source, num=1):
  
     modes = ['OnDemand_ride', 'car', 'bus']
     p = figure(x_range=modes, y_range=(0, 300), 
-               plot_height=350, title="Daily PM2.5 emissions per mode - Scenario {}".format(num),
+               plot_height=350, title="Daily PM2.5 emissions per mode - Run {}".format(num),
                toolbar_location=None, tools="")
 
     p.vbar(x='modes', top='emissions', color='color', source=source, width=0.8)
@@ -604,194 +613,196 @@ def plot_sustainability_25pm_per_mode(source, num=1):
     
     return p
 
-def update_scenario1(attrname, old, new):
-    scenario1_normalized_scores_source.data = scenario_dict[new].normalized_scores_data
-    scenario1_fleetmix_input_source.data = scenario_dict[new].fleetmix_input_data
-    scenario1_routesched_input_line_source.data = scenario_dict[new].routesched_input_line_data
-    scenario1_routesched_input_start_source.data = scenario_dict[new].routesched_input_start_data
-    scenario1_routesched_input_end_source.data = scenario_dict[new].routesched_input_end_data
-    scenario1_fares_input_source.data = scenario_dict[new].fares_input_data
-    scenario1_modeinc_input_source.data = scenario_dict[new].modeinc_input_data
-    scenario1_mode_planned_pie_chart_source.data = scenario_dict[new].mode_planned_pie_chart_data
-    scenario1_mode_realized_pie_chart_source.data = scenario_dict[new].mode_realized_pie_chart_data
-    scenario1_mode_choice_by_time_source.data = scenario_dict[new].mode_choice_by_time_data
-    scenario1_mode_choice_by_income_group_source.data = scenario_dict[new].mode_choice_by_income_group_data
-    scenario1_mode_choice_by_age_group_source.data = scenario_dict[new].mode_choice_by_age_group_data
-    scenario1_mode_choice_by_distance_source.data = scenario_dict[new].mode_choice_by_distance_data
-    scenario1_congestion_travel_time_by_mode_source.data = scenario_dict[new].congestion_travel_time_by_mode_data
-    scenario1_congestion_travel_time_per_passenger_trip_source.data = scenario_dict[new].congestion_travel_time_per_passenger_trip_data
-    scenario1_congestion_miles_travelled_per_mode_source.data = scenario_dict[new].congestion_miles_travelled_per_mode_data
-    scenario1_congestion_bus_vmt_by_ridership_source.data = scenario_dict[new].congestion_bus_vmt_by_ridership_data
-    scenario1_congestion_on_demand_vmt_by_phases_source.data = scenario_dict[new].congestion_on_demand_vmt_by_phases_data
-    scenario1_congestion_travel_speed_source.data = scenario_dict[new].congestion_travel_speed_data
-    scenario1_los_travel_expenditure_source.data = scenario_dict[new].los_travel_expenditure_data
-    scenario1_los_crowding_source.data = scenario_dict[new].los_crowding_data
-    scenario1_transit_cb_source.data = scenario_dict[new].transit_cb_data
-    scenario1_transit_inc_by_mode_source.data = scenario_dict[new].transit_inc_by_mode_data
-    scenario1_sustainability_25pm_per_mode_source.data = scenario_dict[new].sustainability_25pm_per_mode_data
+def update_run1(attrname, old, new):
+    run1_normalized_scores_source.data = run_dict[new].normalized_scores_data
+    run1_fleetmix_input_source.data = run_dict[new].fleetmix_input_data
+    run1_routesched_input_line_source.data = run_dict[new].routesched_input_line_data
+    run1_routesched_input_start_source.data = run_dict[new].routesched_input_start_data
+    run1_routesched_input_end_source.data = run_dict[new].routesched_input_end_data
+    run1_fares_input_source.data = run_dict[new].fares_input_data
+    run1_modeinc_input_source.data = run_dict[new].modeinc_input_data
+    run1_mode_planned_pie_chart_source.data = run_dict[new].mode_planned_pie_chart_data
+    run1_mode_realized_pie_chart_source.data = run_dict[new].mode_realized_pie_chart_data
+    run1_mode_choice_by_time_source.data = run_dict[new].mode_choice_by_time_data
+    run1_mode_choice_by_income_group_source.data = run_dict[new].mode_choice_by_income_group_data
+    run1_mode_choice_by_age_group_source.data = run_dict[new].mode_choice_by_age_group_data
+    run1_mode_choice_by_distance_source.data = run_dict[new].mode_choice_by_distance_data
+    run1_congestion_travel_time_by_mode_source.data = run_dict[new].congestion_travel_time_by_mode_data
+    run1_congestion_travel_time_per_passenger_trip_source.data = run_dict[new].congestion_travel_time_per_passenger_trip_data
+    run1_congestion_miles_travelled_per_mode_source.data = run_dict[new].congestion_miles_travelled_per_mode_data
+    run1_congestion_bus_vmt_by_ridership_source.data = run_dict[new].congestion_bus_vmt_by_ridership_data
+    run1_congestion_on_demand_vmt_by_phases_source.data = run_dict[new].congestion_on_demand_vmt_by_phases_data
+    run1_congestion_travel_speed_source.data = run_dict[new].congestion_travel_speed_data
+    run1_los_travel_expenditure_source.data = run_dict[new].los_travel_expenditure_data
+    run1_los_crowding_source.data = run_dict[new].los_crowding_data
+    run1_transit_cb_source.data = run_dict[new].transit_cb_data
+    run1_transit_inc_by_mode_source.data = run_dict[new].transit_inc_by_mode_data
+    run1_sustainability_25pm_per_mode_source.data = run_dict[new].sustainability_25pm_per_mode_data
 
-def update_scenario2(attrname, old, new):
-    scenario2_normalized_scores_source.data = scenario_dict[new].normalized_scores_data
-    scenario2_fleetmix_input_source.data = scenario_dict[new].fleetmix_input_data
-    scenario2_routesched_input_line_source.data = scenario_dict[new].routesched_input_line_data
-    scenario2_routesched_input_start_source.data = scenario_dict[new].routesched_input_start_data
-    scenario2_routesched_input_end_source.data = scenario_dict[new].routesched_input_end_data
-    scenario2_fares_input_source.data = scenario_dict[new].fares_input_data
-    scenario2_modeinc_input_source.data = scenario_dict[new].modeinc_input_data
-    scenario2_mode_planned_pie_chart_source.data = scenario_dict[new].mode_planned_pie_chart_data
-    scenario2_mode_realized_pie_chart_source.data = scenario_dict[new].mode_realized_pie_chart_data
-    scenario2_mode_choice_by_time_source.data = scenario_dict[new].mode_choice_by_time_data
-    scenario2_mode_choice_by_income_group_source.data = scenario_dict[new].mode_choice_by_income_group_data
-    scenario2_mode_choice_by_age_group_source.data = scenario_dict[new].mode_choice_by_age_group_data
-    scenario2_mode_choice_by_distance_source.data = scenario_dict[new].mode_choice_by_distance_data
-    scenario2_congestion_travel_time_by_mode_source.data = scenario_dict[new].congestion_travel_time_by_mode_data
-    scenario2_congestion_travel_time_per_passenger_trip_source.data = scenario_dict[new].congestion_travel_time_per_passenger_trip_data
-    scenario2_congestion_miles_travelled_per_mode_source.data = scenario_dict[new].congestion_miles_travelled_per_mode_data
-    scenario2_congestion_bus_vmt_by_ridership_source.data = scenario_dict[new].congestion_bus_vmt_by_ridership_data
-    scenario2_congestion_on_demand_vmt_by_phases_source.data = scenario_dict[new].congestion_on_demand_vmt_by_phases_data
-    scenario2_congestion_travel_speed_source.data = scenario_dict[new].congestion_travel_speed_data
-    scenario2_los_travel_expenditure_source.data = scenario_dict[new].los_travel_expenditure_data
-    scenario2_los_crowding_source.data = scenario_dict[new].los_crowding_data
-    scenario2_transit_cb_source.data = scenario_dict[new].transit_cb_data
-    scenario2_transit_inc_by_mode_source.data = scenario_dict[new].transit_inc_by_mode_data
-    scenario2_sustainability_25pm_per_mode_source.data = scenario_dict[new].sustainability_25pm_per_mode_data
+def update_run2(attrname, old, new):
+    run2_normalized_scores_source.data = run_dict[new].normalized_scores_data
+    run2_fleetmix_input_source.data = run_dict[new].fleetmix_input_data
+    run2_routesched_input_line_source.data = run_dict[new].routesched_input_line_data
+    run2_routesched_input_start_source.data = run_dict[new].routesched_input_start_data
+    run2_routesched_input_end_source.data = run_dict[new].routesched_input_end_data
+    run2_fares_input_source.data = run_dict[new].fares_input_data
+    run2_modeinc_input_source.data = run_dict[new].modeinc_input_data
+    run2_mode_planned_pie_chart_source.data = run_dict[new].mode_planned_pie_chart_data
+    run2_mode_realized_pie_chart_source.data = run_dict[new].mode_realized_pie_chart_data
+    run2_mode_choice_by_time_source.data = run_dict[new].mode_choice_by_time_data
+    run2_mode_choice_by_income_group_source.data = run_dict[new].mode_choice_by_income_group_data
+    run2_mode_choice_by_age_group_source.data = run_dict[new].mode_choice_by_age_group_data
+    run2_mode_choice_by_distance_source.data = run_dict[new].mode_choice_by_distance_data
+    run2_congestion_travel_time_by_mode_source.data = run_dict[new].congestion_travel_time_by_mode_data
+    run2_congestion_travel_time_per_passenger_trip_source.data = run_dict[new].congestion_travel_time_per_passenger_trip_data
+    run2_congestion_miles_travelled_per_mode_source.data = run_dict[new].congestion_miles_travelled_per_mode_data
+    run2_congestion_bus_vmt_by_ridership_source.data = run_dict[new].congestion_bus_vmt_by_ridership_data
+    run2_congestion_on_demand_vmt_by_phases_source.data = run_dict[new].congestion_on_demand_vmt_by_phases_data
+    run2_congestion_travel_speed_source.data = run_dict[new].congestion_travel_speed_data
+    run2_los_travel_expenditure_source.data = run_dict[new].los_travel_expenditure_data
+    run2_los_crowding_source.data = run_dict[new].los_crowding_data
+    run2_transit_cb_source.data = run_dict[new].transit_cb_data
+    run2_transit_inc_by_mode_source.data = run_dict[new].transit_inc_by_mode_data
+    run2_sustainability_25pm_per_mode_source.data = run_dict[new].sustainability_25pm_per_mode_data
 
 title_div = Div(text="<img src='Dashboard_Uber_Prize/static/uber.svg' height='18'><b>Prize Visualization Dashboard</b>", width=800, height=10, style={'font-size': '200%'})
 
 path = join(dirname(__file__), 'data/submissions/')
-scenarios = [file for file in listdir(path) if '.' not in file and file != '.DS_Store']
+runs = [file for file in listdir(path) if '.' not in file and file != '.DS_Store']
 
-if 'warm-start' in scenarios:
-    scenario1_key = 'warm-start'
+if 'warm-start' in runs:
+    run1_key = 'warm-start'
 else:
-    scenario1_key = scenarios[0]
+    run1_key = runs[0]
 
-if 'example_run' in scenarios:
-    scenario2_key = 'example_run'
+if 'example_run' in runs:
+    run2_key = 'example_run'
 else:
-    scenario2_key = scenarios[1]
+    run2_key = runs[1]
 
-### Instantiate all Scenario objects and generate data sources ###
-scenario_dict = {}
-for scenario in scenarios:
-    scenario_dict[scenario] = Scenario(name=scenario)
+### Instantiate all run objects and generate data sources ###
+run_dict = {}
+for run in runs:
+    run_dict[run] = Run(name=run)
 ##################################################################
 
 ### Convert data sources into ColumnDataSources ###
-scenario1_normalized_scores_source = ColumnDataSource(data=scenario_dict[scenario1_key].normalized_scores_data)
-scenario1_fleetmix_input_source = ColumnDataSource(data=scenario_dict[scenario1_key].fleetmix_input_data)
-scenario1_routesched_input_line_source = ColumnDataSource(data=scenario_dict[scenario1_key].routesched_input_line_data)
-scenario1_routesched_input_start_source = ColumnDataSource(data=scenario_dict[scenario1_key].routesched_input_start_data)
-scenario1_routesched_input_end_source = ColumnDataSource(data=scenario_dict[scenario1_key].routesched_input_end_data)
-scenario1_fares_input_source = ColumnDataSource(data=scenario_dict[scenario1_key].fares_input_data)
-scenario1_modeinc_input_source = ColumnDataSource(data=scenario_dict[scenario1_key].modeinc_input_data)
-scenario1_mode_planned_pie_chart_source = ColumnDataSource(data=scenario_dict[scenario1_key].mode_planned_pie_chart_data)
-scenario1_mode_realized_pie_chart_source = ColumnDataSource(data=scenario_dict[scenario1_key].mode_realized_pie_chart_data)
-scenario1_mode_choice_by_time_source = ColumnDataSource(data=scenario_dict[scenario1_key].mode_choice_by_time_data)
-scenario1_mode_choice_by_income_group_source = ColumnDataSource(data=scenario_dict[scenario1_key].mode_choice_by_income_group_data)
-scenario1_mode_choice_by_age_group_source = ColumnDataSource(data=scenario_dict[scenario1_key].mode_choice_by_age_group_data)
-scenario1_mode_choice_by_distance_source = ColumnDataSource(data=scenario_dict[scenario1_key].mode_choice_by_distance_data)
-scenario1_congestion_travel_time_by_mode_source = ColumnDataSource(data=scenario_dict[scenario1_key].congestion_travel_time_by_mode_data)
-scenario1_congestion_travel_time_per_passenger_trip_source = ColumnDataSource(data=scenario_dict[scenario1_key].congestion_travel_time_per_passenger_trip_data)
-scenario1_congestion_miles_travelled_per_mode_source = ColumnDataSource(data=scenario_dict[scenario1_key].congestion_miles_travelled_per_mode_data)
-scenario1_congestion_bus_vmt_by_ridership_source = ColumnDataSource(data=scenario_dict[scenario1_key].congestion_bus_vmt_by_ridership_data)
-scenario1_congestion_on_demand_vmt_by_phases_source = ColumnDataSource(data=scenario_dict[scenario1_key].congestion_on_demand_vmt_by_phases_data)
-scenario1_congestion_travel_speed_source = ColumnDataSource(data=scenario_dict[scenario1_key].congestion_travel_speed_data)
-scenario1_los_travel_expenditure_source = ColumnDataSource(data=scenario_dict[scenario1_key].los_travel_expenditure_data)
-scenario1_los_crowding_source = ColumnDataSource(data=scenario_dict[scenario1_key].los_crowding_data)
-scenario1_transit_cb_source = ColumnDataSource(data=scenario_dict[scenario1_key].transit_cb_data)
-scenario1_transit_inc_by_mode_source = ColumnDataSource(data=scenario_dict[scenario1_key].transit_inc_by_mode_data)
-scenario1_sustainability_25pm_per_mode_source = ColumnDataSource(data=scenario_dict[scenario1_key].sustainability_25pm_per_mode_data)
+run1_normalized_scores_source = ColumnDataSource(data=run_dict[run1_key].normalized_scores_data)
+run1_fleetmix_input_source = ColumnDataSource(data=run_dict[run1_key].fleetmix_input_data)
+run1_routesched_input_line_source = ColumnDataSource(data=run_dict[run1_key].routesched_input_line_data)
+run1_routesched_input_start_source = ColumnDataSource(data=run_dict[run1_key].routesched_input_start_data)
+run1_routesched_input_end_source = ColumnDataSource(data=run_dict[run1_key].routesched_input_end_data)
+run1_fares_input_source = ColumnDataSource(data=run_dict[run1_key].fares_input_data)
+run1_modeinc_input_source = ColumnDataSource(data=run_dict[run1_key].modeinc_input_data)
+run1_mode_planned_pie_chart_source = ColumnDataSource(data=run_dict[run1_key].mode_planned_pie_chart_data)
+run1_mode_realized_pie_chart_source = ColumnDataSource(data=run_dict[run1_key].mode_realized_pie_chart_data)
+run1_mode_choice_by_time_source = ColumnDataSource(data=run_dict[run1_key].mode_choice_by_time_data)
+run1_mode_choice_by_income_group_source = ColumnDataSource(data=run_dict[run1_key].mode_choice_by_income_group_data)
+run1_mode_choice_by_age_group_source = ColumnDataSource(data=run_dict[run1_key].mode_choice_by_age_group_data)
+run1_mode_choice_by_distance_source = ColumnDataSource(data=run_dict[run1_key].mode_choice_by_distance_data)
+run1_congestion_travel_time_by_mode_source = ColumnDataSource(data=run_dict[run1_key].congestion_travel_time_by_mode_data)
+run1_congestion_travel_time_per_passenger_trip_source = ColumnDataSource(data=run_dict[run1_key].congestion_travel_time_per_passenger_trip_data)
+run1_congestion_miles_travelled_per_mode_source = ColumnDataSource(data=run_dict[run1_key].congestion_miles_travelled_per_mode_data)
+run1_congestion_bus_vmt_by_ridership_source = ColumnDataSource(data=run_dict[run1_key].congestion_bus_vmt_by_ridership_data)
+run1_congestion_on_demand_vmt_by_phases_source = ColumnDataSource(data=run_dict[run1_key].congestion_on_demand_vmt_by_phases_data)
+run1_congestion_travel_speed_source = ColumnDataSource(data=run_dict[run1_key].congestion_travel_speed_data)
+run1_los_travel_expenditure_source = ColumnDataSource(data=run_dict[run1_key].los_travel_expenditure_data)
+run1_los_crowding_source = ColumnDataSource(data=run_dict[run1_key].los_crowding_data)
+run1_transit_cb_costs_source = ColumnDataSource(data=run_dict[run1_key].transit_cb_costs_data)
+run1_transit_cb_benefits_source = ColumnDataSource(data=run_dict[run1_key].transit_cb_benefits_data)
+run1_transit_inc_by_mode_source = ColumnDataSource(data=run_dict[run1_key].transit_inc_by_mode_data)
+run1_sustainability_25pm_per_mode_source = ColumnDataSource(data=run_dict[run1_key].sustainability_25pm_per_mode_data)
 
-scenario2_normalized_scores_source = ColumnDataSource(data=scenario_dict[scenario2_key].normalized_scores_data)
-scenario2_fleetmix_input_source = ColumnDataSource(data=scenario_dict[scenario2_key].fleetmix_input_data)
-scenario2_routesched_input_line_source = ColumnDataSource(data=scenario_dict[scenario2_key].routesched_input_line_data)
-scenario2_routesched_input_start_source = ColumnDataSource(data=scenario_dict[scenario2_key].routesched_input_start_data)
-scenario2_routesched_input_end_source = ColumnDataSource(data=scenario_dict[scenario2_key].routesched_input_end_data)
-scenario2_fares_input_source = ColumnDataSource(data=scenario_dict[scenario2_key].fares_input_data)
-scenario2_modeinc_input_source = ColumnDataSource(data=scenario_dict[scenario2_key].modeinc_input_data)
-scenario2_mode_planned_pie_chart_source = ColumnDataSource(data=scenario_dict[scenario2_key].mode_planned_pie_chart_data)
-scenario2_mode_realized_pie_chart_source = ColumnDataSource(data=scenario_dict[scenario2_key].mode_realized_pie_chart_data)
-scenario2_mode_choice_by_time_source = ColumnDataSource(data=scenario_dict[scenario2_key].mode_choice_by_time_data)
-scenario2_mode_choice_by_income_group_source = ColumnDataSource(data=scenario_dict[scenario2_key].mode_choice_by_income_group_data)
-scenario2_mode_choice_by_age_group_source = ColumnDataSource(data=scenario_dict[scenario2_key].mode_choice_by_age_group_data)
-scenario2_mode_choice_by_distance_source = ColumnDataSource(data=scenario_dict[scenario2_key].mode_choice_by_distance_data)
-scenario2_congestion_travel_time_by_mode_source = ColumnDataSource(data=scenario_dict[scenario2_key].congestion_travel_time_by_mode_data)
-scenario2_congestion_travel_time_per_passenger_trip_source = ColumnDataSource(data=scenario_dict[scenario2_key].congestion_travel_time_per_passenger_trip_data)
-scenario2_congestion_miles_travelled_per_mode_source = ColumnDataSource(data=scenario_dict[scenario2_key].congestion_miles_travelled_per_mode_data)
-scenario2_congestion_bus_vmt_by_ridership_source = ColumnDataSource(data=scenario_dict[scenario2_key].congestion_bus_vmt_by_ridership_data)
-scenario2_congestion_on_demand_vmt_by_phases_source = ColumnDataSource(data=scenario_dict[scenario2_key].congestion_on_demand_vmt_by_phases_data)
-scenario2_congestion_travel_speed_source = ColumnDataSource(data=scenario_dict[scenario2_key].congestion_travel_speed_data)
-scenario2_los_travel_expenditure_source = ColumnDataSource(data=scenario_dict[scenario2_key].los_travel_expenditure_data)
-scenario2_los_crowding_source = ColumnDataSource(data=scenario_dict[scenario2_key].los_crowding_data)
-scenario2_transit_cb_source = ColumnDataSource(data=scenario_dict[scenario2_key].transit_cb_data)
-scenario2_transit_inc_by_mode_source = ColumnDataSource(data=scenario_dict[scenario2_key].transit_inc_by_mode_data)
-scenario2_sustainability_25pm_per_mode_source = ColumnDataSource(data=scenario_dict[scenario2_key].sustainability_25pm_per_mode_data)
+run2_normalized_scores_source = ColumnDataSource(data=run_dict[run2_key].normalized_scores_data)
+run2_fleetmix_input_source = ColumnDataSource(data=run_dict[run2_key].fleetmix_input_data)
+run2_routesched_input_line_source = ColumnDataSource(data=run_dict[run2_key].routesched_input_line_data)
+run2_routesched_input_start_source = ColumnDataSource(data=run_dict[run2_key].routesched_input_start_data)
+run2_routesched_input_end_source = ColumnDataSource(data=run_dict[run2_key].routesched_input_end_data)
+run2_fares_input_source = ColumnDataSource(data=run_dict[run2_key].fares_input_data)
+run2_modeinc_input_source = ColumnDataSource(data=run_dict[run2_key].modeinc_input_data)
+run2_mode_planned_pie_chart_source = ColumnDataSource(data=run_dict[run2_key].mode_planned_pie_chart_data)
+run2_mode_realized_pie_chart_source = ColumnDataSource(data=run_dict[run2_key].mode_realized_pie_chart_data)
+run2_mode_choice_by_time_source = ColumnDataSource(data=run_dict[run2_key].mode_choice_by_time_data)
+run2_mode_choice_by_income_group_source = ColumnDataSource(data=run_dict[run2_key].mode_choice_by_income_group_data)
+run2_mode_choice_by_age_group_source = ColumnDataSource(data=run_dict[run2_key].mode_choice_by_age_group_data)
+run2_mode_choice_by_distance_source = ColumnDataSource(data=run_dict[run2_key].mode_choice_by_distance_data)
+run2_congestion_travel_time_by_mode_source = ColumnDataSource(data=run_dict[run2_key].congestion_travel_time_by_mode_data)
+run2_congestion_travel_time_per_passenger_trip_source = ColumnDataSource(data=run_dict[run2_key].congestion_travel_time_per_passenger_trip_data)
+run2_congestion_miles_travelled_per_mode_source = ColumnDataSource(data=run_dict[run2_key].congestion_miles_travelled_per_mode_data)
+run2_congestion_bus_vmt_by_ridership_source = ColumnDataSource(data=run_dict[run2_key].congestion_bus_vmt_by_ridership_data)
+run2_congestion_on_demand_vmt_by_phases_source = ColumnDataSource(data=run_dict[run2_key].congestion_on_demand_vmt_by_phases_data)
+run2_congestion_travel_speed_source = ColumnDataSource(data=run_dict[run2_key].congestion_travel_speed_data)
+run2_los_travel_expenditure_source = ColumnDataSource(data=run_dict[run2_key].los_travel_expenditure_data)
+run2_los_crowding_source = ColumnDataSource(data=run_dict[run2_key].los_crowding_data)
+run2_transit_cb_costs_source = ColumnDataSource(data=run_dict[run2_key].transit_cb_costs_data)
+run2_transit_cb_benefits_source = ColumnDataSource(data=run_dict[run2_key].transit_cb_benefits_data)
+run2_transit_inc_by_mode_source = ColumnDataSource(data=run_dict[run2_key].transit_inc_by_mode_data)
+run2_sustainability_25pm_per_mode_source = ColumnDataSource(data=run_dict[run2_key].sustainability_25pm_per_mode_data)
 ###################################################
 
 ### Generate plots from ColumnDataSource's ###
-normalized_scores_1_plot = plot_normalized_scores(source=scenario1_normalized_scores_source)
-fleetmix_input_1_plot = plot_fleetmix_input(source=scenario1_fleetmix_input_source)
+normalized_scores_1_plot = plot_normalized_scores(source=run1_normalized_scores_source)
+fleetmix_input_1_plot = plot_fleetmix_input(source=run1_fleetmix_input_source)
 routesched_input_1_plot = plot_routesched_input(
-    line_source=scenario1_routesched_input_line_source, 
-    start_source=scenario1_routesched_input_start_source,
-    end_source=scenario1_routesched_input_end_source)
-fares_input_1_plot = plot_fares_input(source=scenario1_fares_input_source)
-modeinc_input_1_plot = plot_modeinc_input(source=scenario1_modeinc_input_source)
-mode_planned_pie_chart_1_plot = plot_mode_pie_chart(source=scenario1_mode_planned_pie_chart_source, choice_type='planned')
-mode_realized_pie_chart_1_plot = plot_mode_pie_chart(source=scenario1_mode_realized_pie_chart_source, choice_type='realized')
-mode_choice_by_time_1_plot = plot_mode_choice_by_time(source=scenario1_mode_choice_by_time_source)
-mode_choice_by_income_group_1_plot = plot_mode_choice_by_income_group(source=scenario1_mode_choice_by_income_group_source)
-mode_choice_by_age_group_1_plot = plot_mode_choice_by_age_group(source=scenario1_mode_choice_by_age_group_source)
-mode_choice_by_distance_1_plot = plot_mode_choice_by_distance(source=scenario1_mode_choice_by_distance_source)
-congestion_travel_time_by_mode_1_plot = plot_congestion_travel_time_by_mode(source=scenario1_congestion_travel_time_by_mode_source)
-congestion_travel_time_per_passenger_trip_1_plot = plot_congestion_travel_time_per_passenger_trip(source=scenario1_congestion_travel_time_per_passenger_trip_source)
-congestion_miles_travelled_per_mode_1_plot = plot_congestion_miles_travelled_per_mode(source=scenario1_congestion_miles_travelled_per_mode_source)
-congestion_bus_vmt_by_ridership_1_plot = plot_congestion_bus_vmt_by_ridership(source=scenario1_congestion_bus_vmt_by_ridership_source)
-congestion_on_demand_vmt_by_phases_1_plot = plot_congestion_on_demand_vmt_by_phases(source=scenario1_congestion_on_demand_vmt_by_phases_source)
-congestion_travel_speed_1_plot = plot_congestion_travel_speed(source=scenario1_congestion_travel_speed_source)
-los_travel_expenditure_1_plot = plot_los_travel_expenditure(source=scenario1_los_travel_expenditure_source)
-los_crowding_1_plot = plot_los_crowding(source=scenario1_los_crowding_source)
-transit_cb_1_plot = plot_transit_cb(source=scenario1_transit_cb_source)
-transit_inc_by_mode_1_plot = plot_transit_inc_by_mode(source=scenario1_transit_inc_by_mode_source)
-sustainability_25pm_per_mode_1_plot = plot_sustainability_25pm_per_mode(source=scenario1_sustainability_25pm_per_mode_source)
+    line_source=run1_routesched_input_line_source, 
+    start_source=run1_routesched_input_start_source,
+    end_source=run1_routesched_input_end_source)
+fares_input_1_plot = plot_fares_input(source=run1_fares_input_source)
+modeinc_input_1_plot = plot_modeinc_input(source=run1_modeinc_input_source)
+mode_planned_pie_chart_1_plot = plot_mode_pie_chart(source=run1_mode_planned_pie_chart_source, choice_type='planned')
+mode_realized_pie_chart_1_plot = plot_mode_pie_chart(source=run1_mode_realized_pie_chart_source, choice_type='realized')
+mode_choice_by_time_1_plot = plot_mode_choice_by_time(source=run1_mode_choice_by_time_source)
+mode_choice_by_income_group_1_plot = plot_mode_choice_by_income_group(source=run1_mode_choice_by_income_group_source)
+mode_choice_by_age_group_1_plot = plot_mode_choice_by_age_group(source=run1_mode_choice_by_age_group_source)
+mode_choice_by_distance_1_plot = plot_mode_choice_by_distance(source=run1_mode_choice_by_distance_source)
+congestion_travel_time_by_mode_1_plot = plot_congestion_travel_time_by_mode(source=run1_congestion_travel_time_by_mode_source)
+congestion_travel_time_per_passenger_trip_1_plot = plot_congestion_travel_time_per_passenger_trip(source=run1_congestion_travel_time_per_passenger_trip_source)
+congestion_miles_travelled_per_mode_1_plot = plot_congestion_miles_travelled_per_mode(source=run1_congestion_miles_travelled_per_mode_source)
+congestion_bus_vmt_by_ridership_1_plot = plot_congestion_bus_vmt_by_ridership(source=run1_congestion_bus_vmt_by_ridership_source)
+congestion_on_demand_vmt_by_phases_1_plot = plot_congestion_on_demand_vmt_by_phases(source=run1_congestion_on_demand_vmt_by_phases_source)
+congestion_travel_speed_1_plot = plot_congestion_travel_speed(source=run1_congestion_travel_speed_source)
+los_travel_expenditure_1_plot = plot_los_travel_expenditure(source=run1_los_travel_expenditure_source)
+los_crowding_1_plot = plot_los_crowding(source=run1_los_crowding_source)
+transit_cb_1_plot = plot_transit_cb(costs_source=run1_transit_cb_costs_source, benefits_source=run1_transit_cb_benefits_source)
+transit_inc_by_mode_1_plot = plot_transit_inc_by_mode(source=run1_transit_inc_by_mode_source)
+sustainability_25pm_per_mode_1_plot = plot_sustainability_25pm_per_mode(source=run1_sustainability_25pm_per_mode_source)
 
-normalized_scores_2_plot = plot_normalized_scores(source=scenario2_normalized_scores_source, num=2)
-fleetmix_input_2_plot = plot_fleetmix_input(source=scenario2_fleetmix_input_source, num=2)
+normalized_scores_2_plot = plot_normalized_scores(source=run2_normalized_scores_source, num=2)
+fleetmix_input_2_plot = plot_fleetmix_input(source=run2_fleetmix_input_source, num=2)
 routesched_input_2_plot = plot_routesched_input(
-    line_source=scenario2_routesched_input_line_source, 
-    start_source=scenario2_routesched_input_start_source,
-    end_source=scenario2_routesched_input_end_source, num=2)
-fares_input_2_plot = plot_fares_input(source=scenario2_fares_input_source, num=2)
-modeinc_input_2_plot = plot_modeinc_input(source=scenario2_modeinc_input_source, num=2)
-mode_planned_pie_chart_2_plot = plot_mode_pie_chart(source=scenario2_mode_planned_pie_chart_source, choice_type='planned', num=2)
-mode_realized_pie_chart_2_plot = plot_mode_pie_chart(source=scenario2_mode_realized_pie_chart_source, choice_type='realized', num=2)
-mode_choice_by_time_2_plot = plot_mode_choice_by_time(source=scenario2_mode_choice_by_time_source, num=2)
-mode_choice_by_income_group_2_plot = plot_mode_choice_by_income_group(source=scenario2_mode_choice_by_income_group_source, num=2)
-mode_choice_by_age_group_2_plot = plot_mode_choice_by_age_group(source=scenario2_mode_choice_by_age_group_source, num=2)
-mode_choice_by_distance_2_plot = plot_mode_choice_by_distance(source=scenario2_mode_choice_by_distance_source, num=2)
-congestion_travel_time_by_mode_2_plot = plot_congestion_travel_time_by_mode(source=scenario2_congestion_travel_time_by_mode_source, num=2)
-congestion_travel_time_per_passenger_trip_2_plot = plot_congestion_travel_time_per_passenger_trip(source=scenario2_congestion_travel_time_per_passenger_trip_source, num=2)
-congestion_miles_travelled_per_mode_2_plot = plot_congestion_miles_travelled_per_mode(source=scenario2_congestion_miles_travelled_per_mode_source, num=2)
-congestion_bus_vmt_by_ridership_2_plot = plot_congestion_bus_vmt_by_ridership(source=scenario2_congestion_bus_vmt_by_ridership_source, num=2)
-congestion_on_demand_vmt_by_phases_2_plot = plot_congestion_on_demand_vmt_by_phases(source=scenario2_congestion_on_demand_vmt_by_phases_source, num=2)
-congestion_travel_speed_2_plot = plot_congestion_travel_speed(source=scenario2_congestion_travel_speed_source, num=2)
-los_travel_expenditure_2_plot = plot_los_travel_expenditure(source=scenario2_los_travel_expenditure_source, num=2)
-los_crowding_2_plot = plot_los_crowding(source=scenario2_los_crowding_source, num=2)
-transit_cb_2_plot = plot_transit_cb(source=scenario2_transit_cb_source, num=2)
-transit_inc_by_mode_2_plot = plot_transit_inc_by_mode(source=scenario2_transit_inc_by_mode_source, num=2)
-sustainability_25pm_per_mode_2_plot = plot_sustainability_25pm_per_mode(source=scenario2_sustainability_25pm_per_mode_source, num=2)
+    line_source=run2_routesched_input_line_source, 
+    start_source=run2_routesched_input_start_source,
+    end_source=run2_routesched_input_end_source, num=2)
+fares_input_2_plot = plot_fares_input(source=run2_fares_input_source, num=2)
+modeinc_input_2_plot = plot_modeinc_input(source=run2_modeinc_input_source, num=2)
+mode_planned_pie_chart_2_plot = plot_mode_pie_chart(source=run2_mode_planned_pie_chart_source, choice_type='planned', num=2)
+mode_realized_pie_chart_2_plot = plot_mode_pie_chart(source=run2_mode_realized_pie_chart_source, choice_type='realized', num=2)
+mode_choice_by_time_2_plot = plot_mode_choice_by_time(source=run2_mode_choice_by_time_source, num=2)
+mode_choice_by_income_group_2_plot = plot_mode_choice_by_income_group(source=run2_mode_choice_by_income_group_source, num=2)
+mode_choice_by_age_group_2_plot = plot_mode_choice_by_age_group(source=run2_mode_choice_by_age_group_source, num=2)
+mode_choice_by_distance_2_plot = plot_mode_choice_by_distance(source=run2_mode_choice_by_distance_source, num=2)
+congestion_travel_time_by_mode_2_plot = plot_congestion_travel_time_by_mode(source=run2_congestion_travel_time_by_mode_source, num=2)
+congestion_travel_time_per_passenger_trip_2_plot = plot_congestion_travel_time_per_passenger_trip(source=run2_congestion_travel_time_per_passenger_trip_source, num=2)
+congestion_miles_travelled_per_mode_2_plot = plot_congestion_miles_travelled_per_mode(source=run2_congestion_miles_travelled_per_mode_source, num=2)
+congestion_bus_vmt_by_ridership_2_plot = plot_congestion_bus_vmt_by_ridership(source=run2_congestion_bus_vmt_by_ridership_source, num=2)
+congestion_on_demand_vmt_by_phases_2_plot = plot_congestion_on_demand_vmt_by_phases(source=run2_congestion_on_demand_vmt_by_phases_source, num=2)
+congestion_travel_speed_2_plot = plot_congestion_travel_speed(source=run2_congestion_travel_speed_source, num=2)
+los_travel_expenditure_2_plot = plot_los_travel_expenditure(source=run2_los_travel_expenditure_source, num=2)
+los_crowding_2_plot = plot_los_crowding(source=run2_los_crowding_source, num=2)
+transit_cb_2_plot = plot_transit_cb(costs_source=run2_transit_cb_costs_source, benefits_source=run2_transit_cb_benefits_source, num=2)
+transit_inc_by_mode_2_plot = plot_transit_inc_by_mode(source=run2_transit_inc_by_mode_source, num=2)
+sustainability_25pm_per_mode_2_plot = plot_sustainability_25pm_per_mode(source=run2_sustainability_25pm_per_mode_source, num=2)
 ##############################################
 
 ### Gather plot objects into lists ###
-scenario1_inputs_plots = [
+run1_inputs_plots = [
     fleetmix_input_1_plot,
     routesched_input_1_plot,
     fares_input_1_plot,
     modeinc_input_1_plot
 ]
-scenario1_scores_plots = [normalized_scores_1_plot]
-scenario1_outputs_mode_plots = [
+run1_scores_plots = [normalized_scores_1_plot]
+run1_outputs_mode_plots = [
     mode_planned_pie_chart_1_plot,
     mode_realized_pie_chart_1_plot,
     mode_choice_by_time_1_plot,
@@ -799,7 +810,7 @@ scenario1_outputs_mode_plots = [
     mode_choice_by_age_group_1_plot,
     mode_choice_by_distance_1_plot
 ]
-scenario1_outputs_congestion_plots = [
+run1_outputs_congestion_plots = [
     congestion_travel_time_by_mode_1_plot,
     congestion_travel_time_per_passenger_trip_1_plot,
     congestion_miles_travelled_per_mode_1_plot,
@@ -807,24 +818,24 @@ scenario1_outputs_congestion_plots = [
     congestion_on_demand_vmt_by_phases_1_plot,
     congestion_travel_speed_1_plot
 ]
-scenario1_outputs_los_plots = [
+run1_outputs_los_plots = [
     los_travel_expenditure_1_plot,
     los_crowding_1_plot
 ]
-scenario1_outputs_transitcb_plots = [
+run1_outputs_transitcb_plots = [
     transit_cb_1_plot,
     transit_inc_by_mode_1_plot
 ]
-scenario1_outputs_sustainability_plots = [sustainability_25pm_per_mode_1_plot]
+run1_outputs_sustainability_plots = [sustainability_25pm_per_mode_1_plot]
 
-scenario2_inputs_plots = [
+run2_inputs_plots = [
     fleetmix_input_2_plot,
     routesched_input_2_plot,
     fares_input_2_plot,
     modeinc_input_2_plot
 ]
-scenario2_scores_plots = [normalized_scores_2_plot]
-scenario2_outputs_mode_plots = [
+run2_scores_plots = [normalized_scores_2_plot]
+run2_outputs_mode_plots = [
     mode_planned_pie_chart_2_plot,
     mode_realized_pie_chart_2_plot,
     mode_choice_by_time_2_plot,
@@ -832,7 +843,7 @@ scenario2_outputs_mode_plots = [
     mode_choice_by_age_group_2_plot,
     mode_choice_by_distance_2_plot
 ]
-scenario2_outputs_congestion_plots = [
+run2_outputs_congestion_plots = [
     congestion_travel_time_by_mode_2_plot,
     congestion_travel_time_per_passenger_trip_2_plot,
     congestion_miles_travelled_per_mode_2_plot,
@@ -840,32 +851,32 @@ scenario2_outputs_congestion_plots = [
     congestion_on_demand_vmt_by_phases_2_plot,
     congestion_travel_speed_2_plot
 ]
-scenario2_outputs_los_plots = [
+run2_outputs_los_plots = [
     los_travel_expenditure_2_plot,
     los_crowding_2_plot
 ]
-scenario2_outputs_transitcb_plots = [
+run2_outputs_transitcb_plots = [
     transit_cb_2_plot,
     transit_inc_by_mode_2_plot
 ]
-scenario2_outputs_sustainability_plots = [sustainability_25pm_per_mode_2_plot]
+run2_outputs_sustainability_plots = [sustainability_25pm_per_mode_2_plot]
 ######################################
 
-inputs_plots = row(column(scenario1_inputs_plots), column(scenario2_inputs_plots))
-scores_plots = column(column(scenario1_scores_plots), column(scenario2_scores_plots))
-outputs_mode_plots = row(column(scenario1_outputs_mode_plots), column(scenario2_outputs_mode_plots))
-outputs_los_plots = row(column(scenario1_outputs_los_plots), column(scenario2_outputs_los_plots))
-outputs_congestion_plots = row(column(scenario1_outputs_congestion_plots), column(scenario2_outputs_congestion_plots))
-outputs_transitcb_plots = row(column(scenario1_outputs_transitcb_plots), column(scenario2_outputs_transitcb_plots))
-outputs_sustainability_plots = row(column(scenario1_outputs_sustainability_plots), column(scenario2_outputs_sustainability_plots))
+inputs_plots = row(column(run1_inputs_plots), column(run2_inputs_plots))
+scores_plots = column(column(run1_scores_plots), column(run2_scores_plots))
+outputs_mode_plots = row(column(run1_outputs_mode_plots), column(run2_outputs_mode_plots))
+outputs_los_plots = row(column(run1_outputs_los_plots), column(run2_outputs_los_plots))
+outputs_congestion_plots = row(column(run1_outputs_congestion_plots), column(run2_outputs_congestion_plots))
+outputs_transitcb_plots = row(column(run1_outputs_transitcb_plots), column(run2_outputs_transitcb_plots))
+outputs_sustainability_plots = row(column(run1_outputs_sustainability_plots), column(run2_outputs_sustainability_plots))
 
-scenario1_select = Select(value=scenario1_key, title='Scenario 1', options=sorted(scenarios))
-scenario2_select = Select(value=scenario2_key, title='Scenario 2', options=sorted(scenarios))
+run1_select = Select(value=run1_key, title='Run 1', options=sorted(runs))
+run2_select = Select(value=run2_key, title='Run 2', options=sorted(runs))
 
-pulldowns = row(scenario1_select, scenario2_select)
+pulldowns = row(run1_select, run2_select)
 
-scenario1_select.on_change('value', update_scenario1)
-scenario2_select.on_change('value', update_scenario2)
+run1_select.on_change('value', update_run1)
+run2_select.on_change('value', update_run2)
 
 inputs = layout([inputs_plots], sizing_mode='fixed')
 scores = layout([[scores_plots]], sizing_mode='fixed')

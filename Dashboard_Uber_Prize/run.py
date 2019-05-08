@@ -35,7 +35,7 @@ def reset_index(df):
     # pd.merge(df, index_df, left_index=True, right_index=True) does not work
     return pd.merge(index_df, df, left_index=True, right_index=True)
 
-class Scenario():
+class Run():
 
     def __init__(self, name):
         """
@@ -117,7 +117,7 @@ class Scenario():
         self.los_travel_expenditure_data = self.make_los_travel_expenditure_data()
         self.los_crowding_data = self.make_los_crowding_data()
 
-        self.transit_cb_data = self.make_transit_cb_data()
+        self.transit_cb_costs_data, self.transit_cb_benefits_data = self.make_transit_cb_data()
         self.transit_inc_by_mode_data = self.make_transit_inc_by_mode_data()
 
         self.sustainability_25pm_per_mode_data = self.make_sustainability_25pm_per_mode_data()
@@ -654,7 +654,7 @@ class Scenario():
         bus_slice_df.loc[:, "passengerOverflow"] = bus_slice_df['numPassengers'] > bus_slice_df['seatingCapacity']
         # AM peak = 7am-10am, PM Peak = 5pm-8pm, Early Morning, Midday, Late Evening = in between
         bins = [0, 25200, 36000, 61200, 72000, 86400]
-        labels = ["Early Morning", "AM Peak", "Midday", "PM Peak", "Late Evening"]
+        labels = ["Early Morning (12a-7a)", "AM Peak (7a-10a)", "Midday (10a-5p)", "PM Peak (5p-8p)", "Late Evening (8p-12a)"]
         bus_slice_df.loc[:, "servicePeriod"] = pd.cut(bus_slice_df['departureTime'],
                                                       bins=bins,
                                                       labels=labels)
@@ -696,21 +696,25 @@ class Scenario():
 
         columns = ["Veh", "Fare"]
         bus_fare_df = self.legs_df.loc[self.legs_df["Mode"] == "bus"][columns]
+        bus_fare_df.loc[:, "Fare"] *= -1
 
         bus_fare_df.loc[:, "route_id"] = bus_fare_df['Veh'].apply(
             lambda x: self.trip_to_route[x.split(":")[-1].split('-')[0].split('-')[0]])
         
         merged_df = pd.merge(bus_slice_df, bus_fare_df, on=["route_id"])
 
-        cost_labels = ["OperationalCosts", "FuelCost", "Fare"]
-        grouped_data = merged_df.groupby(by="route_id")[cost_labels].sum()
+        labels = ["OperationalCosts", "FuelCost", "Fare"]
+        costs_labels = labels[:2]
+        benefits_labels = ["Fare"]
+
+        grouped_data = merged_df.groupby(by="route_id")[labels].sum()
 
         max_cost = grouped_data.sum(axis=1).max() * 1.1
         grouped_data.reset_index(inplace=True)
 
         # Completing the dataframe with the missing route_ids (so that they appear in the plot)
         df = pd.DataFrame(['', 0.0, 0.0, 0.0]).T
-        df.columns = ["route_id"] + cost_labels
+        df.columns = ["route_id"] + labels
 
         for route_id in ROUTE_IDS:
             if int(route_id) not in grouped_data['route_id'].values:
@@ -720,10 +724,11 @@ class Scenario():
 
         grouped_data.loc[:, 'route_id'] = grouped_data.loc[:, 'route_id'].astype(str)
 
-        colors = Category10[len(cost_labels)]
+        colors = Category10[len(labels)]
 
-        data = grouped_data.to_dict(orient='list')
-        return data
+        costs_data = grouped_data[['route_id'] + costs_labels].to_dict(orient='list')
+        benefits_data = grouped_data[['route_id'] + benefits_labels].to_dict(orient='list')
+        return costs_data, benefits_data
 
     def make_transit_inc_by_mode_data(self):
         
