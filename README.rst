@@ -5,17 +5,17 @@ Dashboard_Uber_Prize
     :target: https://pypi.python.org/pypi/Dashboard_Uber_Prize
     :alt: Latest PyPI version
 
-Visualizations of Uber Prize Leaders for Judging
+Visualizations of Uber Prize Results
 
 Usage
 -----
 Type:
 ::
-	python Dashboard_Uber_Prize/app.py
+	bokeh serve --show Dashboard_Uber_Prize/
 
-Then go to: `http://127.0.0.1:8050/`_ in your browser.
+Your browser will then open to: `http://localhost:5006/Dashboard_Uber_Prize`.
 
-Using the dropdown menus, choose the two contestants that you want to compare.
+Using the dropdown menus, choose the two runs that you want to compare.
 
 Installation
 ------------
@@ -25,7 +25,7 @@ To pull down the repo, type this into your terminal in the directory you want th
 
 Create a virtual environment to install your python packages in, and install the requirements.
 ::
-	virtualenv --python=/usr/bin/python2.7 env
+	virtualenv env
 	. env/bin/activate
 	pip install -r requirements.txt
 

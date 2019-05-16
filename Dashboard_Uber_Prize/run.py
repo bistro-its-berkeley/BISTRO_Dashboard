@@ -37,7 +37,7 @@ def reset_index(df):
 
 class Run():
 
-    def __init__(self, name):
+    def __init__(self, name, scenario):
         """
         Initialize class object.
 
@@ -51,8 +51,9 @@ class Run():
         None
         """
         self.name = name
+        self.scenario = scenario
         self.modes = ['OnDemand_ride', 'car', 'drive_transit', 'walk', 'walk_transit']
-        self.submissions_dir = join(dirname(__file__), 'data/submissions/{}'.format(self.name))
+        self.submissions_dir = join(dirname(__file__), 'data/submissions/{}/{}'.format(self.scenario, self.name))
         self.reference_dir = join(dirname(__file__), 'data/sioux_faux_bus_lines')
         self.get_data(from_csv=True)
         self.make_data_sources()
