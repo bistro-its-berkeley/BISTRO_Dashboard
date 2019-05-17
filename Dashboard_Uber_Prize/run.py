@@ -120,7 +120,7 @@ class Run():
 
         self.transit_cb_costs_data, self.transit_cb_benefits_data = self.make_transit_cb_data()
         self.transit_inc_by_mode_data = self.make_transit_inc_by_mode_data()
-
+        
         self.sustainability_25pm_per_mode_data = self.make_sustainability_25pm_per_mode_data()
 
     def splitting_min_max(self, df, name_column):
@@ -414,8 +414,8 @@ class Run():
 
     def make_mode_choice_by_distance_data(self):
         
-        mode_df = self.trips_df[['Trip_ID', 'Distance_m', 'realizedTripMode']]
-        mode_df.loc[:,'Distance_miles'] = mode_df.loc[:,'Distance_m'] * 0.000621371
+        mode_df = self.trips_df[['Trip_ID', 'Distance_m', 'realizedTripMode']].copy()
+        mode_df.loc[:,'Distance_miles'] = mode_df['Distance_m'] * 0.000621371
 
         edges = [0, .5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 7.5, 10, 40]
         bins = ['[{}, {})'.format(edges[i], edges[i+1]) for i in range(len(edges)-1)]
@@ -554,7 +554,7 @@ class Run():
     def make_congestion_on_demand_vmt_by_phases_data(self):
 
         columns = ["numPassengers", "departureTime", "length"]
-        vmt_on_demand = self.paths_df[self.paths_df["vehicle"].str.contains("rideHailVehicle")][columns]
+        vmt_on_demand = self.paths_df[self.paths_df["vehicle"].str.contains("rideHailVehicle")].copy()[columns]
         # Split the travels by hour of the day
         edges = range(0,25*3600,3600)
         vmt_on_demand.loc[:, "Hour"] = pd.cut(vmt_on_demand["departureTime"],
@@ -583,7 +583,7 @@ class Run():
 
     def make_congestion_travel_speed_data(self):
 
-        trips = self.trips_df[self.trips_df['Duration_sec'] > 0]
+        trips = self.trips_df[self.trips_df['Duration_sec'] > 0].copy()
         
         trips.loc[:, 'average speed (meters/sec)'] = trips['Distance_m'] / trips['Duration_sec']
         trips.loc[:, 'Average Speed (miles/hour)'] = 2.23694 * trips['average speed (meters/sec)']
@@ -592,9 +592,9 @@ class Run():
         edges = [6, 8, 10, 12, 14, 16, 18, 20, 22, 24]
         bins = ['[{}, {})'.format(edges[i], edges[i+1]) for i in range(len(edges)-1)]
         trips.loc[:, 'time_interval'] = pd.cut(trips['Start_time_hour'],
-                                                    bins=edges,
-                                                    labels=bins,
-                                                    right=False).astype(str)
+                                               bins=edges,
+                                               labels=bins,
+                                               right=False).astype(str)
 
         trips = trips.rename(index=str, columns={"time_interval": "Start time interval (hour)"})
 
@@ -612,20 +612,20 @@ class Run():
 
     def make_los_travel_expenditure_data(self):
 
-        trips = self.trips_df
+        trips = self.trips_df.copy()
         trips.loc[:, 'trip_cost'] = np.zeros(trips.shape[0])
 
         trips.loc[trips['realizedTripMode'] == 'car', 'trip_cost'] = \
-            trips.loc[trips['realizedTripMode'] == 'car', :].FuelCost.values
+            trips[trips['realizedTripMode'] == 'car']['FuelCost'].values
 
         fare_modes = ['walk_transit', 'drive_transit', 'OnDemand_ride']
-        trips[trips['realizedTripMode'].isin(fare_modes)].loc[:, 'trip_cost'] = \
-            trips[trips['realizedTripMode'].isin(fare_modes)].Fare.values - \
-            trips[trips['realizedTripMode'].isin(fare_modes)].Incentive.values
+        trips.loc[trips['realizedTripMode'].isin(fare_modes), 'trip_cost'] = \
+            trips[trips['realizedTripMode'].isin(fare_modes)]['Fare'].values - \
+            trips[trips['realizedTripMode'].isin(fare_modes)]['Incentive'].values
 
-        trips[trips['realizedTripMode'] == 'drive_transit'].loc[:, 'trip_cost'] = \
-            trips[trips['realizedTripMode'] == 'drive_transit'].trip_cost.values + \
-            trips[trips['realizedTripMode'] == 'drive_transit'].FuelCost.values
+        trips.loc[trips['realizedTripMode'] == 'drive_transit', 'trip_cost'] = \
+            trips[trips['realizedTripMode'] == 'drive_transit']['trip_cost'].values + \
+            trips[trips['realizedTripMode'] == 'drive_transit']['FuelCost'].values
 
         trips.loc[trips['trip_cost'] < 0,:] = 0
         trips.loc[:, "hour_of_day"] = np.floor(trips.Start_time/3600)
@@ -646,7 +646,7 @@ class Run():
     def make_los_crowding_data(self):
 
         columns = ["vehicle", "numPassengers", "departureTime", "arrivalTime", "vehicleType"]
-        bus_slice_df = self.paths_df[self.paths_df["mode"] == "bus"][columns]
+        bus_slice_df = self.paths_df[self.paths_df["mode"] == "bus"].copy()[columns]
 
         bus_slice_df.loc[:, "route_id"] = bus_slice_df['vehicle'].apply(lambda x: self.trip_to_route[x.split(":")[1].split('-')[0]])
         bus_slice_df.loc[:, "serviceTime"] = (bus_slice_df['arrivalTime'] - bus_slice_df['departureTime']) / 3600
@@ -688,7 +688,7 @@ class Run():
     def make_transit_cb_data(self):
 
         columns = ["vehicle", "numPassengers", "departureTime", "arrivalTime", "FuelCost", "vehicleType"]
-        bus_slice_df = self.paths_df.loc[self.paths_df["mode"] == "bus"][columns]
+        bus_slice_df = self.paths_df.loc[self.paths_df["mode"] == "bus"].copy()[columns]
 
         bus_slice_df.loc[:, "route_id"] = bus_slice_df['vehicle'].apply(lambda x: self.trip_to_route[x.split(":")[-1].split('-')[0]])
         bus_slice_df.loc[:, "operational_costs_per_bus"] = bus_slice_df['vehicleType'].apply(lambda x: self.operational_costs[x])
@@ -696,7 +696,7 @@ class Run():
         bus_slice_df.loc[:, "OperationalCosts"] = bus_slice_df['operational_costs_per_bus'] * bus_slice_df['serviceTime']
 
         columns = ["Veh", "Fare"]
-        bus_fare_df = self.legs_df.loc[self.legs_df["Mode"] == "bus"][columns]
+        bus_fare_df = self.legs_df[self.legs_df["Mode"] == "bus"].copy()[columns]
 
         bus_fare_df.loc[:, "route_id"] = bus_fare_df['Veh'].apply(
             lambda x: self.trip_to_route[x.split(":")[-1].split('-')[0].split('-')[0]])
@@ -735,18 +735,18 @@ class Run():
     def make_transit_inc_by_mode_data(self):
         
         columns = ['FuelCost', 'Fare', 'Start_time', 'realizedTripMode', 'Incentive']
-        trips = self.trips_df[columns]
+        trips = self.trips_df.copy()[columns]
 
         trips.loc[:, 'trip_cost'] = np.zeros(trips.shape[0])
         trips.loc[:, 'ride_expenditure'] = trips['Fare'] - trips['Incentive']
         ride_modes = set(['walk_transit', 'drive_transit', 'OnDemand_ride'])
 
-        trips.loc[trips['realizedTripMode'] == 'car', 'trip_cost'] = trips.loc[trips['realizedTripMode'] == 'car', 'FuelCost'].values
-        trips.loc[trips['realizedTripMode'].isin(ride_modes), 'trip_cost'] = trips.loc[trips['realizedTripMode'].isin(ride_modes), 'ride_expenditure'].values
-        trips.loc[trips['realizedTripMode'] == 'drive_transit', 'trip_cost'] += trips.loc[trips['realizedTripMode'] == 'drive_transit', 'FuelCost'].values
+        trips.loc[trips['realizedTripMode'] == 'car', 'trip_cost'] = trips[trips['realizedTripMode'] == 'car']['FuelCost'].values
+        trips.loc[trips['realizedTripMode'].isin(ride_modes), 'trip_cost'] = trips[trips['realizedTripMode'].isin(ride_modes)]['ride_expenditure'].values
+        trips.loc[trips['realizedTripMode'] == 'drive_transit', 'trip_cost'] += trips[trips['realizedTripMode'] == 'drive_transit']['FuelCost'].values
 
         trips.loc[:, 'Incentives distributed'] = trips['Incentive'].values
-        trips.loc[trips['trip_cost'] < 0, 'Incentives distributed'] -= trips.loc[trips['trip_cost'] < 0, 'trip_cost'].values
+        trips.loc[trips['trip_cost'] < 0, 'Incentives distributed'] -= trips[trips['trip_cost'] < 0]['trip_cost'].values
 
         trips.loc[:, "hour_of_day"] = np.floor(trips['Start_time'] / 3600).astype(int)
         grouped = trips.groupby(by=["realizedTripMode", "hour_of_day"])["Incentives distributed"].sum().reset_index()
@@ -767,7 +767,7 @@ class Run():
     def make_sustainability_25pm_per_mode_data(self):
         
         columns = ["vehicle", "mode", "length", "departureTime"]
-        vmt = self.paths_df[columns]
+        vmt = self.paths_df.copy()[columns]
 
         # emissions for each mode
         emissions_bus = round(
