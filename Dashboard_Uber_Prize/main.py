@@ -472,7 +472,7 @@ def plot_congestion_travel_speed(source, num=1):
 
 def plot_los_travel_expenditure(source, num=1):
 
-    p = figure(x_range=HOURS, y_range=(0, 1), 
+    p = figure(x_range=HOURS, y_range=(0, 10), 
                plot_height=350, plot_width=600, title="Average travel expenditure per trip and by mode over the day - Run {}".format(num),
                toolbar_location=None, tools="")
 
