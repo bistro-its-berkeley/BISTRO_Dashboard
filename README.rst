@@ -9,13 +9,21 @@ Visualizations of Uber Prize Results
 
 Usage
 -----
-Type:
+Unless you provide a custom `run_files_override.csv` file, the dashboard app will search your 
+data directory for scenario-run pairs to show. It will automatically hide any pairs that it 
+knows about but can not find. It will automatically add and show any pairs that it did not
+previously know about. To manually override the show/hide settings, you may edit the second 
+column in `run_files.csv` or provide your custom `run_files_override.csv` file.
+
+To run the app, type:
 ::
 	bokeh serve --show Dashboard_Uber_Prize/
 
 Your browser will then open to: `http://localhost:5006/Dashboard_Uber_Prize`.
 
-Using the dropdown menus, choose the two runs that you want to compare.
+It may take a minute or so for the dashboard to load up, depending on how many runs you are
+comparing. Once it loads up, use the dropdown menus to choose the two scenario-run pairs that 
+you want to compare.
 
 Installation
 ------------

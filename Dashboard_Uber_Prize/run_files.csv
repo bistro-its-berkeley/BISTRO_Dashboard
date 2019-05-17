@@ -1,0 +1,13 @@
+run_dir,show
+S0/warm-start,1
+S0/example_run,1
+S1a/warm-start,1
+S1a/example_run,1
+S1b/warm-start,1
+S1b/example_run,1
+S2a/warm-start,1
+S2a/example_run,1
+S2b/warm-start,1
+S2b/example_run,1
+S3/warm-start,1
+S3/example_run,1

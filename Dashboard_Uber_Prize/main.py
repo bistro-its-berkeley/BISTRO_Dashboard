@@ -614,6 +614,39 @@ def plot_sustainability_25pm_per_mode(source, num=1):
     
     return p
 
+def find_runs():
+
+    path = join(dirname(__file__), 'data/submissions/')
+    new_dirs = {'/'.join(f.split('/')[-2:]) for f in glob.glob(join(path, '*/*')) if isdir(f)}
+
+    cols = ['run_dir', 'show']
+    try:
+        run_dirs = pd.read_csv(join(dirname(__file__), 'run_files.csv'))
+    except IOError:
+        run_dirs = pd.DataFrame(columns=cols)
+
+    old_dirs = set(run_dirs['run_dir'])
+
+    removed_dirs = old_dirs.difference(new_dirs)
+    added_dirs = new_dirs.difference(old_dirs)
+
+    added = pd.DataFrame.from_records([(added_dir, 1) for added_dir in added_dirs], columns=cols)
+    run_dirs = run_dirs.append(added, ignore_index=True, sort=False)
+    run_dirs.loc[run_dirs['run_dir'].isin(removed_dirs), 'show'] = 0
+
+    run_dirs.to_csv(join(dirname(__file__), 'run_files.csv'), index=False)
+
+    if len(removed_dirs):
+        print("Can't find the following runs, hiding for now:")
+        print('\n'.join(['\t{}'.format(removed_dir) for removed_dir in removed_dirs]))
+
+    if len(added_dirs):
+        print('The following runs were added:')
+        print('\n'.join(['\t{}'.format(added_dir) for added_dir in added_dirs]))
+
+    return run_dirs
+
+
 def update_run1(attrname, old, new):
     scenario_key, run_key = new.split('/')
     run1_normalized_scores_source.data = run_dict[scenario_key][run_key].normalized_scores_data
@@ -675,7 +708,11 @@ title_div = Div(text="<img src='Dashboard_Uber_Prize/static/uber.svg' height='18
 ### Instantiate all run objects and generate data sources ###
 path = join(dirname(__file__), 'data/submissions/')
 scenarios = [f.split('/')[-1] for f in glob.glob(join(path, '*')) if isdir(f)]
-runs = ['/'.join(f.split('/')[-2:]) for f in glob.glob(join(path, '*/*')) if isdir(f)]
+try:
+    run_dirs = pd.read_csv(join(dirname(__file__), 'run_files_override.csv'))
+except IOError:
+    run_dirs = find_runs()
+runs = run_dirs.loc[run_dirs['show'] == 1, 'run_dir'].to_list()
 
 run_dict = {}
 for scenario_run in runs:

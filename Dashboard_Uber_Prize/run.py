@@ -162,7 +162,7 @@ class Run():
         # scores.drop('Level of service: average OnDemand_ride wait times', axis = 0, inplace=True)
         scores.reset_index(inplace=True)
 
-        scores["Component Name"] = scores["Component Name"].astype('category').cat.reorder_categories(CATEGORIES)
+        scores.loc[:, "Component Name"] = scores["Component Name"].astype('category').cat.reorder_categories(CATEGORIES)
 
         scores = scores.sort_values(by="Component Name")
 
@@ -190,22 +190,22 @@ class Run():
         # Adding the missing bus types in the dataframe so that they appear in the plot
         for bus in BUSES_LIST:
             if bus not in fleet_mix["vehicleTypeId"].values:
-                df["vehicleTypeId"] = bus
-                fleet_mix = fleet_mix.append(df)
+                df.loc[0, "vehicleTypeId"] = bus
+                fleet_mix = fleet_mix.append(df, ignore_index=True, sort=False)
 
         # Adding the missing bus routes in the dataframe so that they appear in the plot
-        fleet_mix["routeId"] = fleet_mix["routeId"].astype(str)
+        fleet_mix.loc[:, "routeId"] = fleet_mix["routeId"].astype(str)
 
         df = pd.DataFrame([AGENCY_IDS[0], "", BUSES_LIST[0]]).T
         df.columns = ["agencyId", "routeId", "vehicleTypeId"]
 
         for route in ROUTE_IDS:
             if route not in fleet_mix["routeId"].values:
-                df["routeId"] = route
-                fleet_mix = fleet_mix.append(df)
+                df.loc[0, "routeId"] = route
+                fleet_mix = fleet_mix.append(df, ignore_index=True, sort=False)
 
         # Reodering bus types starting by "BUS-DEFAULT" and then by ascending bus size order
-        fleet_mix["vehicleTypeId"] = fleet_mix["vehicleTypeId"].astype('category').cat.reorder_categories(
+        fleet_mix.loc[:, "vehicleTypeId"] = fleet_mix["vehicleTypeId"].astype('category').cat.reorder_categories(
             BUSES_LIST)
 
         fleet_mix = fleet_mix.drop(labels="agencyId", axis=1)
@@ -218,7 +218,7 @@ class Run():
     def make_routesched_input_data(self):
 
         frequency = self.frequency_df
-        frequency["route_id"] = frequency["route_id"].astype(str)
+        frequency.loc[:, "route_id"] = frequency["route_id"].astype(str)
 
         # Add all missing routes (the ones that were not changed) in the DF so that they appear int he plot
         df = pd.DataFrame([0, 0, 24*3600, 0]).T
@@ -226,12 +226,12 @@ class Run():
 
         for route in ROUTE_IDS:
             if route not in frequency["route_id"].values:
-                df["route_id"] = route
-                frequency = frequency.append(df)
+                df.loc[0, "route_id"] = route
+                frequency = frequency.append(df, ignore_index=True, sort=False)
 
-        frequency["start_time"] = (frequency["start_time"].astype(int) / 3600).round(1)
-        frequency["end_time"] = (frequency["end_time"].astype(int) / 3600).round(1)
-        frequency["headway_secs"] = (frequency["headway_secs"].astype(int) / 3600).round(1)
+        frequency.loc[:, "start_time"] = (frequency["start_time"].astype(int) / 3600).round(1)
+        frequency.loc[:, "end_time"] = (frequency["end_time"].astype(int) / 3600).round(1)
+        frequency.loc[:, "headway_secs"] = (frequency["headway_secs"].astype(int) / 3600).round(1)
 
         frequency = frequency.sort_values(by="route_id").set_index("route_id")
 
@@ -258,8 +258,8 @@ class Run():
     def make_fares_input_data(self, max_fare=10, max_age=120):
         fares = self.fares_df
 
-        fares["age"] = fares["age"].astype(str)
-        fares["routeId"] = fares["routeId"].astype(str)
+        fares.loc[:, "age"] = fares["age"].astype(str)
+        fares.loc[:, "routeId"] = fares["routeId"].astype(str)
 
         df = pd.DataFrame(columns=["agencyId", "routeId", "age", "amount"])
 
@@ -269,15 +269,15 @@ class Run():
                 df1 = pd.DataFrame(
                     [[fare['agencyId'], route, fare['age'], fare['amount']] for route in ROUTE_IDS],
                     columns=["agencyId", "routeId", "age", "amount"])
-                df = df.append(df1)
+                df = df.append(df1, ignore_index=True, sort=False)
 
             else:
-                df = df.append(fare)
+                df = df.append(fare, ignore_index=True, sort=False)
 
         # Splitting age ranges into 2 columns (min_age and max_age)
         fares = self.splitting_min_max(df, "age")
-        fares["routeId"] = fares["routeId"].astype(str)
-        fares["amount"] = fares["amount"].astype(float)
+        fares.loc[:, "routeId"] = fares["routeId"].astype(str)
+        fares.loc[:, "amount"] = fares["amount"].astype(float)
 
         fares = fares.drop(labels=["age"], axis=1)
         fares = fares.sort_values(by=["amount", "routeId"])
@@ -287,7 +287,7 @@ class Run():
     def make_modeinc_input_data(self, max_incentive=50, max_age=120, max_income=150000):
 
         incentives = self.incentives_df
-        incentives["amount"] = incentives["amount"].astype(float)
+        incentives.loc[:, "amount"] = incentives["amount"].astype(float)
 
         # Completing the dataframe with the missing subsidized modes (so that they appear in the plot)
         df = pd.DataFrame(["", "(0:{})".format(max_age), "(0:{})".format(max_income), 0.00]).T
@@ -295,8 +295,8 @@ class Run():
 
         modes = ["OnDemand_ride", "drive_transit", "walk_transit"]
         for mode in modes:
-            df["mode"] = mode
-            incentives = incentives.append(df)
+            df.loc[0, "mode"] = mode
+            incentives = incentives.append(df, ignore_index=True, sort=False)
         incentives = incentives.drop_duplicates()
 
         # Splitting age and income columns
@@ -306,7 +306,7 @@ class Run():
         incentives = incentives.drop(labels=["age", "income"], axis=1)
 
         # Changing the type of the "mode" column to 'category' to reorder the modes
-        incentives["mode"] = incentives["mode"].astype('category').cat.reorder_categories(modes)
+        incentives.loc[:, "mode"] = incentives["mode"].astype('category').cat.reorder_categories(modes)
 
         incentives = incentives.sort_values(by=["amount", "mode"])
         data = incentives.to_dict(orient='list')
@@ -317,8 +317,8 @@ class Run():
         # Select columns w/ modes
         mode_choice = mode_choice.iloc[-1].drop('iterations').reset_index(name='value').rename(columns={'index': 'Mode'})
         
-        mode_choice['perc'] = mode_choice['value']/mode_choice['value'].sum() * 100.0
-        mode_choice['angle'] = mode_choice['value']/mode_choice['value'].sum() * 2*math.pi
+        mode_choice.loc[:, 'perc'] = mode_choice['value']/mode_choice['value'].sum() * 100.0
+        mode_choice.loc[:, 'angle'] = mode_choice['value']/mode_choice['value'].sum() * 2*math.pi
         mode_choice = mode_choice.sort_values('angle', ascending=False)
         cumangle = 0.0
         for i, row in mode_choice.iterrows():
@@ -328,13 +328,13 @@ class Run():
 
         sorterIndex = dict(zip(self.modes + ['others'], range(len(self.modes + ['others']))))
         mode_choice.loc[:, 'Mode'].replace(to_replace='ride_hail', value='OnDemand_ride', inplace=True)
-        mode_choice['Mode_order'] = mode_choice['Mode'].map(sorterIndex)
+        mode_choice.loc[:, 'Mode_order'] = mode_choice['Mode'].map(sorterIndex)
         mode_choice = mode_choice.sort_values('Mode_order')
 
-        mode_choice['color'] = Category10[len(mode_choice)]
+        mode_choice.loc[:, 'color'] = Category10[len(mode_choice)]
             
-        mode_choice["label"] = mode_choice.apply(lambda x: '{}%'.format(round(x['perc'], 1)), axis=1)
-        mode_choice["label"] = mode_choice["label"].str.pad(30, side = "left")
+        mode_choice.loc[:, "label"] = mode_choice.apply(lambda x: '{}%'.format(round(x['perc'], 1)), axis=1)
+        mode_choice.loc[:, "label"] = mode_choice["label"].str.pad(30, side = "left")
         data = mode_choice.to_dict(orient='list')
         return data
 
@@ -359,8 +359,8 @@ class Run():
 
         for hour in range(max_hour + 1):
             if str(hour) not in mode_choice_by_hour["hours"].values:
-                df["hours"] = str(hour)
-                mode_choice_by_hour = mode_choice_by_hour.append(df)
+                df.loc[0, "hours"] = str(hour)
+                mode_choice_by_hour = mode_choice_by_hour.append(df, ignore_index=True, sort=False)
 
         mode_choice_by_hour = mode_choice_by_hour.set_index('hours')
 
@@ -376,10 +376,10 @@ class Run():
         people_income_mode = self.persons_df[persons_cols].merge(self.trips_df[trips_cols], on=['PID'])
         edges = [0, 10000, 25000, 50000, 75000, 100000, float('inf')]
         bins = ['[$0, $10k)', '[$10k, $25k)', '[$25k, $50k)', '[$50k, $75k)', '[$75k, $100k)', '[$100k, inf)']
-        people_income_mode['income_group'] = pd.cut(people_income_mode['income'],
-                                                    bins=edges,
-                                                    labels=bins,
-                                                    right=False).astype(str)
+        people_income_mode.loc[:, 'income_group'] = pd.cut(people_income_mode['income'],
+                                                           bins=edges,
+                                                           labels=bins,
+                                                           right=False).astype(str)
         grouped = people_income_mode.groupby(by=['realizedTripMode', 'income_group']).agg('count').reset_index()
         ymax = grouped['PID'].max() * 1.1
 
@@ -398,10 +398,10 @@ class Run():
         people_age_mode = self.persons_df[persons_cols].merge(self.trips_df[trips_cols], on=['PID'])
         edges = [0, 18, 30, 40, 50, 60, float('inf')]
         bins = ['[{}, {})'.format(edges[i], edges[i+1]) for i in range(len(edges)-1)]
-        people_age_mode['age_group'] = pd.cut(people_age_mode['Age'],
-                           bins=edges,
-                           labels=bins,
-                           right=False).astype(str)
+        people_age_mode.loc[:, 'age_group'] = pd.cut(people_age_mode['Age'],
+                                                     bins=edges,
+                                                     labels=bins,
+                                                     right=False).astype(str)
         grouped = people_age_mode.groupby(by=['realizedTripMode', 'age_group']).agg('count').reset_index()
         ymax = grouped['PID'].max() * 1.1
 
@@ -420,9 +420,9 @@ class Run():
         edges = [0, .5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 7.5, 10, 40]
         bins = ['[{}, {})'.format(edges[i], edges[i+1]) for i in range(len(edges)-1)]
         mode_df.loc[:,'Trip Distance (miles)'] = pd.cut(mode_df['Distance_miles'],
-                           bins=edges,
-                           labels=bins,
-                           right=False).astype(str)
+                                                        bins=edges,
+                                                        labels=bins,
+                                                        right=False).astype(str)
 
         mode_df_grouped = mode_df.groupby(by=['realizedTripMode', 'Trip Distance (miles)']).agg('count').reset_index()
 
@@ -525,7 +525,7 @@ class Run():
                                                        labels=bins,
                                                        right=False)
         vmt_bus_ridership.replace(np.nan, 0, inplace=True)
-        vmt_bus_ridership["Hour"] = vmt_bus_ridership["Hour"].astype("int")
+        vmt_bus_ridership.loc[:, "Hour"] = vmt_bus_ridership["Hour"].astype("int")
         del vmt_bus_ridership['numPassengers']
         del vmt_bus_ridership['departureTime']
         del vmt_bus_ridership['arrivalTime']
@@ -536,9 +536,9 @@ class Run():
         for ridership in bins:
             for hour in range(24):
                 if len(vmt_bus_ridership[(vmt_bus_ridership['Hour'] == hour) & (vmt_bus_ridership['ridership'] == ridership)].index) == 0:
-                    df["ridership"] = ridership
-                    df["Hour"] = hour
-                    vmt_bus_ridership = vmt_bus_ridership.append(df)
+                    df.loc[0, "ridership"] = ridership
+                    df.loc[0, "Hour"] = hour
+                    vmt_bus_ridership = vmt_bus_ridership.append(df, ignore_index=True, sort=False)
 
         vmt_bus_ridership = vmt_bus_ridership.groupby(['Hour', 'ridership'])['length'].sum().reset_index().pivot(
             index='Hour',
@@ -569,7 +569,7 @@ class Run():
 
         vmt_on_demand = vmt_on_demand.groupby(by=["Hour", "drivingState"])['length'].sum().reset_index()
         vmt_on_demand.replace(np.nan, 0, inplace=True)
-        vmt_on_demand["Hour"] = vmt_on_demand["Hour"].astype("int")
+        vmt_on_demand.loc[:, "Hour"] = vmt_on_demand["Hour"].astype("int")
         vmt_on_demand = vmt_on_demand.pivot(
             index='Hour', 
             columns='drivingState',
@@ -677,9 +677,9 @@ class Run():
         df.columns = ["route_id"] + labels
 
         for route_id in ROUTE_IDS:
-            if route_id not in grouped_data['route_id'].values:
-                df["route_id"] = route_id
-                grouped_data = grouped_data.append(df)
+            if route_id not in set(grouped_data['route_id']):
+                df.loc[0, "route_id"] = route_id
+                grouped_data = grouped_data.append(df, ignore_index=True, sort=False)
 
         grouped_data.loc[:, 'route_id'] = grouped_data.loc[:, 'route_id'].astype(str)
         data = grouped_data.to_dict(orient='list')
@@ -718,8 +718,8 @@ class Run():
 
         for route_id in ROUTE_IDS:
             if int(route_id) not in grouped_data['route_id'].values:
-                df["route_id"] = int(route_id)
-                grouped_data = grouped_data.append(df)
+                df.loc[0, "route_id"] = int(route_id)
+                grouped_data = grouped_data.append(df, ignore_index=True, sort=False)
         grouped_data.sort_values('route_id', inplace=True)
 
         grouped_data.loc[:, 'route_id'] = grouped_data.loc[:, 'route_id'].astype(str)
