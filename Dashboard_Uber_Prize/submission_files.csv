@@ -1,4 +1,4 @@
-run_dir,show
+submission_dir,show
 S0/warm-start,1
 S0/example_run,1
 S1a/warm-start,1
@@ -11,3 +11,5 @@ S2b/warm-start,1
 S2b/example_run,1
 S3/warm-start,1
 S3/example_run,1
+SiouxFaux/Deep_Dish,1
+SiouxFaux/Grizzlies,1

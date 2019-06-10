@@ -35,7 +35,7 @@ def reset_index(df):
     # pd.merge(df, index_df, left_index=True, right_index=True) does not work
     return pd.merge(index_df, df, left_index=True, right_index=True)
 
-class Run():
+class Submission():
 
     def __init__(self, name, scenario):
         """
@@ -297,7 +297,7 @@ class Run():
         for mode in modes:
             df.loc[0, "mode"] = mode
             incentives = incentives.append(df, ignore_index=True, sort=False)
-        incentives = incentives.drop_duplicates()
+        incentives = incentives[incentives["mode"].isin(modes)].drop_duplicates()
 
         # Splitting age and income columns
         incentives = self.splitting_min_max(incentives, "age")
