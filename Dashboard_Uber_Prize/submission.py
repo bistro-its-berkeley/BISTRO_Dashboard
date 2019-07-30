@@ -1,3 +1,4 @@
+import pdb
 import math
 import numpy as np 
 from os import listdir
@@ -6,20 +7,8 @@ import pandas as pd
 # import seaborn as sns 
 
 from bokeh.models import ColumnDataSource
-from bokeh.palettes import Category10, Category20, Plasma256, YlOrRd
+from bokeh.palettes import Dark2, Category10, Category20, Plasma256, YlOrRd
 
-CATEGORIES = [
-    'Accessibility: Number of secondary locations accessible within 15 minutes',
-    'Accessibility: Number of work locations accessible within 15 minutes',
-    'Congestion: average vehicle delay per passenger trip',
-    'Congestion: total vehicle miles traveled',
-    'Level of service: average bus crowding experienced',
-    'Level of service: average trip expenditure - secondary',
-    'Level of service: average trip expenditure - work',
-    'Level of service: costs and benefits',
-    'Sustainability: Total PM 2.5 Emissions',
-    'Submission Score'
-]
 HOURS = [str(h) for h in range(24)]
 ROUTE_IDS = ['1340', '1341', '1342', '1343', '1344', '1345', '1346', '1347', '1348', '1349', '1350', '1351']
 BUSES_LIST = ['BUS-DEFAULT', 'BUS-SMALL-HD', 'BUS-STD-HD', 'BUS-STD-ART']
@@ -34,6 +23,12 @@ def reset_index(df):
     # if the index contains a Categorical. 
     # pd.merge(df, index_df, left_index=True, right_index=True) does not work
     return pd.merge(index_df, df, left_index=True, right_index=True)
+
+def calc_ridership_perc(row):
+    if row['numPassengers'] > row['seatingCapacity']:
+        return 100.0 + (row['numPassengers'] - row['seatingCapacity']) * 100.0 / row['standingRoomCapacity']
+    else:
+        return row['numPassengers'] * 100.0 / row['seatingCapacity']
 
 class Submission():
 
@@ -85,6 +80,8 @@ class Submission():
 
             self.seating_capacities = pd.read_csv(join(self.reference_dir, "availableVehicleTypes.csv"))[[
                 "vehicleTypeId", "seatingCapacity"]].set_index("vehicleTypeId", drop=True).T.to_dict("records")[0]
+            self.standing_room_capacities = pd.read_csv(join(self.reference_dir, "availableVehicleTypes.csv"))[[
+                "vehicleTypeId", "standingRoomCapacity"]].set_index("vehicleTypeId", drop=True).T.to_dict("records")[0]
             self.trip_to_route = pd.read_csv(join(self.reference_dir, "gtfs_data/trips.txt"))[[
                 "trip_id", "route_id"]].set_index("trip_id", drop=True).T.to_dict('records')[0]
             self.operational_costs = pd.read_csv(join(self.reference_dir, "vehicleCosts.csv"))[[
@@ -110,7 +107,7 @@ class Submission():
 
         self.congestion_travel_time_by_mode_data = self.make_congestion_travel_time_by_mode_data()
         self.congestion_travel_time_per_passenger_trip_data = self.make_congestion_travel_time_per_passenger_trip_data()
-        self.congestion_miles_travelled_per_mode_data = self.make_congestion_miles_travelled_per_mode_data()
+        self.congestion_miles_traveled_per_mode_data = self.make_congestion_miles_traveled_per_mode_data()
         self.congestion_bus_vmt_by_ridership_data = self.make_congestion_bus_vmt_by_ridership_data()
         self.congestion_on_demand_vmt_by_phases_data = self.make_congestion_on_demand_vmt_by_phases_data()
         self.congestion_travel_speed_data = self.make_congestion_travel_speed_data()
@@ -156,21 +153,19 @@ class Submission():
 
     def make_normalized_scores_data(self):
         scores = self.scores_df
-        scores = scores.loc[:,["Component Name","Weighted Score"]]
+        scores = scores.loc[:,["Component Name", "Weighted Score"]]
         scores.set_index("Component Name", inplace=True)
-        #Drop the `submission score` row
-        # scores.drop('Level of service: average OnDemand_ride wait times', axis = 0, inplace=True)
         scores.reset_index(inplace=True)
 
-        scores.loc[:, "Component Name"] = scores["Component Name"].astype('category').cat.reorder_categories(CATEGORIES)
+        scores.loc[:, "Component Name"] = scores["Component Name"].astype('category')#.cat.reorder_categories(CATEGORIES)
 
         scores = scores.sort_values(by="Component Name")
 
-        palette = ["#4682b4"] * (len(scores)-1) + ["#000080"]
-        scores.loc[:, 'color'] = palette
+        scores.loc[:, 'color'] = "#4682b4"
+        scores.loc[scores["Component Name"] == 'Submission Score', 'color'] = "#000080"
 
-        min_score = min(scores['Weighted Score'].min(), 0.0) * 1.1
-        max_score = max(scores['Weighted Score'].max(), 1.0) * 1.1
+        # min_score = min(scores['Weighted Score'].min(), 0.0) * 1.1
+        # max_score = max(scores['Weighted Score'].max(), 1.0) * 1.1
 
         data = scores.to_dict(orient='list')
         return data
@@ -221,7 +216,7 @@ class Submission():
         frequency.loc[:, "route_id"] = frequency["route_id"].astype(str)
 
         # Add all missing routes (the ones that were not changed) in the DF so that they appear int he plot
-        df = pd.DataFrame([0, 0, 24*3600, 0]).T
+        df = pd.DataFrame([0, 0, 24*3600, 10800]).T
         df.columns = ["route_id", "start_time", "end_time", "headway_secs"]
 
         for route in ROUTE_IDS:
@@ -321,19 +316,24 @@ class Submission():
         mode_choice.loc[:, 'angle'] = mode_choice['value']/mode_choice['value'].sum() * 2*math.pi
         mode_choice = mode_choice.sort_values('angle', ascending=False)
         cumangle = 0.0
+        scale = 3.0
         for i, row in mode_choice.iterrows():
             mode_choice.loc[i, 'start_angle'] = cumangle
-            cumangle += row['angle']
+            cumangle += row['angle'] / 2.0
+            mode_choice.loc[i, 'x_loc'] = math.cos(cumangle) * 0.2
+            mode_choice.loc[i, 'y_loc'] = 1 + (math.sin(cumangle) * 0.2 * scale)
+            cumangle += row['angle'] / 2.0
             mode_choice.loc[i, 'end_angle'] = cumangle
-
+            
         sorterIndex = dict(zip(self.modes + ['others'], range(len(self.modes + ['others']))))
         mode_choice.loc[:, 'Mode'].replace(to_replace='ride_hail', value='OnDemand_ride', inplace=True)
         mode_choice.loc[:, 'Mode_order'] = mode_choice['Mode'].map(sorterIndex)
         mode_choice = mode_choice.sort_values('Mode_order')
 
-        mode_choice.loc[:, 'color'] = Category10[len(mode_choice)]
+        mode_choice.loc[:, 'color'] = Dark2[len(mode_choice)]
             
-        mode_choice.loc[:, "label"] = mode_choice.apply(lambda x: '{}%'.format(round(x['perc'], 1)), axis=1)
+        mode_choice.loc[:, "label"] = mode_choice.apply(lambda x: '{}%'.format(round(x['perc'], 1)) if x['perc']
+             >= 2.0 else '', axis=1)
         mode_choice.loc[:, "label"] = mode_choice["label"].str.pad(30, side = "left")
         data = mode_choice.to_dict(orient='list')
         return data
@@ -364,7 +364,7 @@ class Submission():
 
         mode_choice_by_hour = mode_choice_by_hour.set_index('hours')
 
-        max_choice = mode_choice_by_hour.sum(axis=1).max() * 1.1
+        # max_choice = mode_choice_by_hour.sum(axis=1).max() * 1.1
 
         data = mode_choice_by_hour.reset_index().to_dict(orient='list')
         return data 
@@ -381,7 +381,7 @@ class Submission():
                                                            labels=bins,
                                                            right=False).astype(str)
         grouped = people_income_mode.groupby(by=['realizedTripMode', 'income_group']).agg('count').reset_index()
-        ymax = grouped['PID'].max() * 1.1
+        # ymax = grouped['PID'].max() * 1.1
 
         grouped = grouped.pivot(
             index='realizedTripMode', 
@@ -403,7 +403,7 @@ class Submission():
                                                      labels=bins,
                                                      right=False).astype(str)
         grouped = people_age_mode.groupby(by=['realizedTripMode', 'age_group']).agg('count').reset_index()
-        ymax = grouped['PID'].max() * 1.1
+        # ymax = grouped['PID'].max() * 1.1
 
         grouped = grouped.pivot(
             index='realizedTripMode', 
@@ -430,12 +430,12 @@ class Submission():
         mode_df_grouped = mode_df_grouped.rename(index=str, columns={'Trip_ID': 'num_trips'})
 
         for_plot = mode_df_grouped[['realizedTripMode', 'Trip Distance (miles)', 'num_trips']]
-        max_trips = for_plot.groupby('Trip Distance (miles)')['num_trips'].sum().max() * 1.1
+        # max_trips = for_plot.groupby('Trip Distance (miles)')['num_trips'].sum().max() * 1.1
 
         for_plot = for_plot.rename(columns={'realizedTripMode': 'Trip Mode'})
         for_plot = for_plot.pivot(index='Trip Distance (miles)', columns='Trip Mode', values='num_trips').reset_index()
         
-        colors = Category10[len(self.modes)]
+        # colors = Dark2[len(self.modes)]
 
         data = for_plot.to_dict(orient='list')
         return data 
@@ -445,11 +445,11 @@ class Submission():
         travel_time = pd.DataFrame(self.travel_times_df.set_index("TravelTimeMode\Hour").mean(axis=1)).T
 
         travel_time.rename(columns={'ride_hail': 'OnDemand_ride'}, inplace=True)
-        del travel_time['others']
+        # del travel_time['others']
 
-        max_time = travel_time.max(axis=1)[0] * 1.1
+        # max_time = travel_time.max(axis=1)[0] * 1.1
 
-        palette = Category10[len(self.modes)]
+        palette = Dark2[len(self.modes)]
 
         data=dict( 
             x=self.modes,
@@ -463,21 +463,21 @@ class Submission():
         travel_time = self.travel_times_df.set_index("TravelTimeMode\Hour").T.reset_index()
         
         travel_time.rename(columns={"ride_hail": "OnDemand_ride"}, inplace=True)
-        del travel_time['others']
+        # del travel_time['others']
 
-        max_hour = max([int(h) for h in travel_time['index']])
-        if max_hour > 23:
-            hours = [str(h) for h in range(max_hour + 1)]
-        else:
-            hours = HOURS
-            max_hour = 23
+        # max_hour = max([int(h) for h in travel_time['index']])
+        # if max_hour > 23:
+        #     hours = [str(h) for h in range(max_hour + 1)]
+        # else:
+        #     hours = HOURS
+        #     max_hour = 23
 
-        max_time = travel_time.max().max() * 1.1 
+        # max_time = travel_time.max().max() * 1.1 
 
         data = travel_time.to_dict(orient='list')
         return data
 
-    def make_congestion_miles_travelled_per_mode_data(self):
+    def make_congestion_miles_traveled_per_mode_data(self):
 
         # get_vmt_dataframe:
         vmt_walk = round(
@@ -489,46 +489,52 @@ class Submission():
         vmt_car = round(self.legs_df[self.legs_df["Mode"] == "car"]["Distance_m"].apply(lambda x: x * 0.000621371).sum(), 0)
         vmt = pd.DataFrame({"bus": [vmt_bus], "car": [vmt_car], "OnDemand_ride": [vmt_on_demand], "walk" : [vmt_walk]})
 
-        modes = ['OnDemand_ride', 'car', 'bus', 'walk']
+        modes = ['OnDemand_ride', 'car', 'walk', 'bus']
         vmt = pd.melt(vmt, value_vars=modes)
 
-        max_vmt = vmt['value'].max() * 1.1
+        # max_vmt = vmt['value'].max() * 1.1
 
-        palette = Category10[len(modes)]
-        data = dict(modes=modes, vmt=[vmt_bus, vmt_car, vmt_on_demand, vmt_walk], color=palette)
+        palette = Dark2[5]
+        data = dict(modes=modes, vmt=[vmt_on_demand, vmt_car, vmt_walk, vmt_bus], 
+            color=[palette[0], palette[1], palette[3], palette[4]])
         return data
-        # source = ColumnDataSource(data=dict(modes=modes, vmt=[vmt_bus, vmt_car, vmt_on_demand, vmt_walk], color=palette))
-        # return source 
 
-    def make_congestion_bus_vmt_by_ridership_data(self, seatingCapacity=50):
-        columns = ["numPassengers", "length", "departureTime", "arrivalTime"]
+    def make_congestion_bus_vmt_by_ridership_data(self):
+        columns = ["numPassengers", "vehicleType", "length", "departureTime", "arrivalTime"]
         vmt_bus_ridership = self.paths_df[self.paths_df["mode"] == "bus"][columns]
+        vmt_bus_ridership.loc[:, 'seatingCapacity'] = vmt_bus_ridership['vehicleType'].apply(
+            lambda x: self.seating_capacities[x])
+        vmt_bus_ridership.loc[:, 'standingRoomCapacity'] = vmt_bus_ridership['vehicleType'].apply(
+            lambda x: self.standing_room_capacities[x])
+
+        vmt_bus_ridership.loc[:, 'ridershipPerc'] = vmt_bus_ridership.apply(lambda x: calc_ridership_perc(x), axis=1)
+
         # Split the travels by hour of the day
         edges = range(0,25*3600,3600)
         vmt_bus_ridership.loc[:, "Hour"] = pd.cut(vmt_bus_ridership["departureTime"], 
                                                   bins=edges,
                                                   labels=HOURS,
-                                                  right=False)
+                                                  include_lowest=True)
 
         # Group by hours of the day and number of passengers in the bus
-        vmt_bus_ridership = vmt_bus_ridership.groupby(by=["Hour", "numPassengers"]).sum().reset_index()
-        edges = [0, 1, seatingCapacity*0.5, seatingCapacity, seatingCapacity+1, seatingCapacity*100]
+        vmt_bus_ridership = vmt_bus_ridership.groupby(by=["Hour", "ridershipPerc"])['length'].sum().reset_index()
+        edges = [0, 0.01, 50, 100, 150.0, 200.0]
         bins = [
             'empty\n(0 passengers)', 
             'low ridership\n(< 50% seating capacity)', 
             'medium ridership\n(< seating capacity)', 
-            'full\n(at capacity)', 
-            'crowded\n(> seating capacity)'
+            'high ridership\n(< 50% standing capacity)',
+            'crowded\n(<= standing capacity)'
         ]
-        vmt_bus_ridership.loc[:, "ridership"] = pd.cut(vmt_bus_ridership["numPassengers"], 
+        vmt_bus_ridership.loc[:, "ridership"] = pd.cut(vmt_bus_ridership["ridershipPerc"], 
                                                        bins=edges,
                                                        labels=bins,
-                                                       right=False)
+                                                       include_lowest=True)
         vmt_bus_ridership.replace(np.nan, 0, inplace=True)
         vmt_bus_ridership.loc[:, "Hour"] = vmt_bus_ridership["Hour"].astype("int")
-        del vmt_bus_ridership['numPassengers']
-        del vmt_bus_ridership['departureTime']
-        del vmt_bus_ridership['arrivalTime']
+        # del vmt_bus_ridership['numPassengers']
+        # del vmt_bus_ridership['departureTime']
+        # del vmt_bus_ridership['arrivalTime']
         # Completing the dataframe with the missing ridership bins (so that they appear in the plot)
         df = pd.DataFrame([0, 0.0, ""]).T
         df.columns = ["Hour", "length", "ridership"]
@@ -539,14 +545,13 @@ class Submission():
                     df.loc[0, "ridership"] = ridership
                     df.loc[0, "Hour"] = hour
                     vmt_bus_ridership = vmt_bus_ridership.append(df, ignore_index=True, sort=False)
-
         vmt_bus_ridership = vmt_bus_ridership.groupby(['Hour', 'ridership'])['length'].sum().reset_index().pivot(
             index='Hour',
             columns='ridership', 
             values='length')
-        ymax = vmt_bus_ridership.sum(axis=1).max()*1.1
+        # ymax = vmt_bus_ridership.sum(axis=1).max()*1.1
 
-        colors = Category10[len(bins)]
+        # colors = Dark2[len(bins)]
 
         data = vmt_bus_ridership.reset_index().to_dict(orient='list')
         return data 
@@ -574,9 +579,9 @@ class Submission():
             index='Hour', 
             columns='drivingState',
             values='length')
-        ymax = vmt_on_demand.sum(axis=1).max()*1.1
+        # ymax = vmt_on_demand.sum(axis=1).max()*1.1
 
-        colors = Category10[10][:len(driving_states)]
+        # colors = Dark2[3][:len(driving_states)]
 
         data = vmt_on_demand.reset_index().to_dict(orient='list')
         return data 
@@ -599,7 +604,7 @@ class Submission():
         trips = trips.rename(index=str, columns={"time_interval": "Start time interval (hour)"})
 
         grouped = trips.groupby(by=['Start time interval (hour)', 'realizedTripMode'])['Average Speed (miles/hour)'].mean().reset_index()
-        max_speed = grouped['Average Speed (miles/hour)'].max() * 1.2
+        # max_speed = grouped['Average Speed (miles/hour)'].max() * 1.2
 
         grouped = grouped.pivot(
             index='Start time interval (hour)', 
@@ -632,7 +637,7 @@ class Submission():
 
         grouped = trips.groupby(by=["realizedTripMode", "hour_of_day"])["trip_cost"].mean().reset_index()
         grouped = grouped[grouped['realizedTripMode'] != 0]
-        max_cost = grouped['trip_cost'].max() * 1.1
+        # max_cost = grouped['trip_cost'].max() * 1.1
 
         grouped = grouped.pivot(
             index='hour_of_day', 
@@ -661,7 +666,7 @@ class Submission():
                                                       labels=labels)
         grouped_data = bus_slice_df[bus_slice_df['passengerOverflow']].groupby([
             "route_id", "servicePeriod"])["serviceTime"].sum().fillna(0).reset_index()
-        max_crowding = grouped_data['serviceTime'].max() * 1.1
+        # max_crowding = grouped_data['serviceTime'].max() * 1.1
 
         grouped_data = reset_index(grouped_data.pivot(
             index='route_id', 
@@ -709,7 +714,7 @@ class Submission():
 
         grouped_data = merged_df.groupby(by="route_id")[labels].sum()
 
-        max_cost = grouped_data.sum(axis=1).max() * 1.1
+        # max_cost = grouped_data.sum(axis=1).max() * 1.1
         grouped_data.reset_index(inplace=True)
 
         # Completing the dataframe with the missing route_ids (so that they appear in the plot)
@@ -726,7 +731,7 @@ class Submission():
         grouped_data.loc[:, 'OperationalCosts'] *= -1
         grouped_data.loc[:, 'FuelCost'] *= -1
 
-        colors = Category10[len(labels)]
+        # colors = Dark2[len(labels)]
 
         costs_data = grouped_data[['route_id'] + costs_labels].to_dict(orient='list')
         benefits_data = grouped_data[['route_id'] + benefits_labels].to_dict(orient='list')
@@ -751,9 +756,9 @@ class Submission():
         trips.loc[:, "hour_of_day"] = np.floor(trips['Start_time'] / 3600).astype(int)
         grouped = trips.groupby(by=["realizedTripMode", "hour_of_day"])["Incentives distributed"].sum().reset_index()
 
-        max_incentives = grouped['Incentives distributed'].max() * 1.1
-        if max_incentives == 0:
-            max_incentives = 100
+        # max_incentives = grouped['Incentives distributed'].max() * 1.1
+        # if max_incentives == 0:
+        #     max_incentives = 100
 
         grouped = grouped.pivot(
             index='hour_of_day', 
@@ -783,11 +788,8 @@ class Submission():
         modes = ['OnDemand_ride', 'car', 'bus']
         emissions = pd.melt(emissions, value_vars=modes)
 
-        max_emissions = emissions['value'].max() * 1.1
+        # max_emissions = emissions['value'].max() * 1.1
         
-        palette = Category10[len(modes)]
+        palette = Dark2[len(modes)]
         data=dict(modes=modes, emissions=[emissions_on_demand, emissions_car, emissions_bus], color=palette)
         return data
-
-# TODO:
-# add in xml parser function

@@ -1,7 +1,9 @@
 env/
+*.png
 *.pyc
 *.ipynb
 *.DS_Store
 Dashboard_Uber_Prize/submission_files_override.csv
-Dashboard_Uber_Prize/data/submissions/SiouxFaux/*
-!Dashboard_Uber_Prize/data/submissions/SiouxFaux/.gitkeep 
+Dashboard_Uber_Prize/data/submissions/*
+!Dashboard_Uber_Prize/data/submissions/*/.gitkeep
+figures/
