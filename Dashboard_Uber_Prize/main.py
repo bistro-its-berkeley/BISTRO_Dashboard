@@ -18,11 +18,48 @@ from bokeh.plotting import figure, show
 from bokeh.transform import dodge, transform
 
 from submission import Submission
+from db_loader import BistroDB
+
 
 HOURS = [str(h) for h in range(24)]
 ROUTE_IDS = ['1340', '1341', '1342', '1343', '1344', '1345', '1346', '1347', '1348', '1349', '1350', '1351']
+
 BUSES_LIST = ['BUS-DEFAULT', 'BUS-SMALL-HD', 'BUS-STD-HD', 'BUS-STD-ART']
-MODES = ['OnDemand_ride', 'car', 'drive_transit', 'walk', 'walk_transit']#, 'mixed_mode']
+MODES = ['ride_hail', 'car', 'drive_transit', 'walk', 'walk_transit']#, 'mixed_mode']
+
+SOURCE_NAME_DATA_PAIR = [
+('normalized_scores_source', 'normalized_scores_data'),
+('fleetmix_input_source', 'fleetmix_input_data'),
+('routesched_input_line_source', 'routesched_input_line_data'),
+('routesched_input_start_source', 'routesched_input_start_data'),
+('routesched_input_end_source', 'routesched_input_end_data'),
+('fares_input_source', 'fares_input_data'),
+('modeinc_input_source', 'modeinc_input_data'),
+('mode_planned_pie_chart_source', 'mode_planned_pie_chart_data'),
+('mode_realized_pie_chart_source', 'mode_realized_pie_chart_data'),
+('mode_choice_by_time_source', 'mode_choice_by_time_data'),
+('mode_choice_by_income_group_source', 'mode_choice_by_income_group_data'),
+('mode_choice_by_age_group_source', 'mode_choice_by_age_group_data'),
+('mode_choice_by_distance_source', 'mode_choice_by_distance_data'),
+('congestion_travel_time_by_mode_source',
+    'congestion_travel_time_by_mode_data'),
+('congestion_travel_time_per_passenger_trip_source',
+    'congestion_travel_time_per_passenger_trip_data'),
+('congestion_miles_traveled_per_mode_source',
+    'congestion_miles_traveled_per_mode_data'),
+('congestion_bus_vmt_by_ridership_source',
+    'congestion_bus_vmt_by_ridership_data'),
+('congestion_on_demand_vmt_by_phases_source',
+    'congestion_on_demand_vmt_by_phases_data'),
+('congestion_travel_speed_source', 'congestion_travel_speed_data'),
+('los_travel_expenditure_source', 'los_travel_expenditure_data'),
+('los_crowding_source', 'los_crowding_data'),
+('transit_cb_costs_source', 'transit_cb_costs_data'),
+('transit_cb_benefits_source', 'transit_cb_benefits_data'),
+('transit_inc_by_mode_source', 'transit_inc_by_mode_data'),
+('sustainability_25pm_per_mode_source', 'sustainability_25pm_per_mode_data')
+]
+
 
 def plot_normalized_scores(source, sub_key=1, savefig='None'):
     
@@ -154,7 +191,7 @@ def plot_fares_input(source, max_fare=10, max_age=121, sub_key=1, savefig='None'
 def plot_modeinc_input(source, max_incentive=50, max_age=121, max_income=150000, sub_key=1, savefig='None'):
 
     mapper = LinearColorMapper(palette=Plasma256[:120:-1], low=0.0, high=max_incentive)
-    inc_modes = ['OnDemand_ride', 'drive_transit', 'walk_transit']
+    inc_modes = ['ride_hail', 'drive_transit', 'walk_transit']
 
     p1 = figure(x_range=(0, max_age), y_range=inc_modes, 
                plot_height=175, plot_width=475,
@@ -467,7 +504,7 @@ def plot_congestion_travel_time_per_passenger_trip(source, sub_key=1, savefig='N
 
 def plot_congestion_miles_traveled_per_mode(source, sub_key=1, savefig='None'):
 
-    p = figure(x_range=['OnDemand_ride', 'car', 'walk', 'bus'], #y_range=(0, 90000), 
+    p = figure(x_range=['ride_hail', 'car', 'walk', 'bus'], #y_range=(0, 90000), 
                plot_height=350, plot_width=600, 
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
@@ -630,7 +667,7 @@ def plot_los_travel_expenditure(source, sub_key=1, savefig='None'):
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
     p.add_layout(Title(text="Average travel expenditure per trip and by mode over the day", text_font_size="14pt"), 'above')
 
-    spend_modes = set(['walk_transit', 'drive_transit', 'car', 'OnDemand_ride'])
+    spend_modes = set(['walk_transit', 'drive_transit', 'car', 'ride_hail'])
     nbins = len(spend_modes)
     total_width = 0.85
     bin_width = total_width / nbins
@@ -755,7 +792,7 @@ def plot_transit_inc_by_mode(source, sub_key=1, savefig='None'):
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
     p.add_layout(Title(text="Total incentives distributed by time of day per mode", text_font_size="14pt"), 'above')
 
-    ride_modes = set(['walk_transit', 'drive_transit', 'OnDemand_ride'])
+    ride_modes = set(['walk_transit', 'drive_transit', 'ride_hail'])
     nbins = len(ride_modes)
     total_width = 0.85
     bin_width = total_width / nbins
@@ -790,7 +827,7 @@ def plot_transit_inc_by_mode(source, sub_key=1, savefig='None'):
 
 def plot_sustainability_25pm_per_mode(source, sub_key=1, savefig='None'):
  
-    modes = ['OnDemand_ride', 'car', 'bus']
+    modes = ['ride_hail', 'car', 'bus']
     p = figure(x_range=modes, #y_range=(0, 2500), 
                plot_height=350, 
                toolbar_location=None, tools="")
@@ -861,84 +898,59 @@ def create_dir_tree(sub_key):
     except OSError:
         pass
 
+def update_submission(submission_sources, sub_order):
 
-def update_submission1(attrname, old, new):
-    scenario_key, submission_key = new.split('/')
-    create_dir_tree(submission_key)
-    submission1_normalized_scores_source.data = submission_dict[scenario_key]['submissions'][submission_key].normalized_scores_data
-    submission1_fleetmix_input_source.data = submission_dict[scenario_key]['submissions'][submission_key].fleetmix_input_data
-    submission1_routesched_input_line_source.data = submission_dict[scenario_key]['submissions'][submission_key].routesched_input_line_data
-    submission1_routesched_input_start_source.data = submission_dict[scenario_key]['submissions'][submission_key].routesched_input_start_data
-    submission1_routesched_input_end_source.data = submission_dict[scenario_key]['submissions'][submission_key].routesched_input_end_data
-    submission1_fares_input_source.data = submission_dict[scenario_key]['submissions'][submission_key].fares_input_data
-    submission1_modeinc_input_source.data = submission_dict[scenario_key]['submissions'][submission_key].modeinc_input_data
-    submission1_mode_planned_pie_chart_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_planned_pie_chart_data
-    submission1_mode_realized_pie_chart_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_realized_pie_chart_data
-    submission1_mode_choice_by_time_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_choice_by_time_data
-    submission1_mode_choice_by_income_group_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_choice_by_income_group_data
-    submission1_mode_choice_by_age_group_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_choice_by_age_group_data
-    submission1_mode_choice_by_distance_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_choice_by_distance_data
-    submission1_congestion_travel_time_by_mode_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_travel_time_by_mode_data
-    submission1_congestion_travel_time_per_passenger_trip_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_travel_time_per_passenger_trip_data
-    submission1_congestion_miles_traveled_per_mode_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_miles_traveled_per_mode_data
-    submission1_congestion_bus_vmt_by_ridership_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_bus_vmt_by_ridership_data
-    submission1_congestion_on_demand_vmt_by_phases_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_on_demand_vmt_by_phases_data
-    submission1_congestion_travel_speed_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_travel_speed_data
-    submission1_los_travel_expenditure_source.data = submission_dict[scenario_key]['submissions'][submission_key].los_travel_expenditure_data
-    submission1_los_crowding_source.data = submission_dict[scenario_key]['submissions'][submission_key].los_crowding_data
-    submission1_transit_cb_costs_source.data = submission_dict[scenario_key]['submissions'][submission_key].transit_cb_costs_data
-    submission1_transit_cb_benefits_source.data = submission_dict[scenario_key]['submissions'][submission_key].transit_cb_benefits_data
-    submission1_transit_inc_by_mode_source.data = submission_dict[scenario_key]['submissions'][submission_key].transit_inc_by_mode_data
-    submission1_sustainability_25pm_per_mode_source.data = submission_dict[scenario_key]['submissions'][submission_key].sustainability_25pm_per_mode_data
+    def update_sub_order(attrname, old, new):
+        # This function updates the data source for plots whenever people select
+        # a different submission from the dropdown
+        scenario_key, submission_key = new.split('/')
+        create_dir_tree(submission_key)
+        submission = submission_dict[scenario_key]['submissions'][submission_key]
+        for source_name, data_name in SOURCE_NAME_DATA_PAIR:
+            submission_sources[sub_order][source_name].data = \
+                getattr(submission, data_name)
 
-def update_submission2(attrname, old, new):
-    scenario_key, submission_key = new.split('/')
-    create_dir_tree(submission_key)
-    submission2_normalized_scores_source.data = submission_dict[scenario_key]['submissions'][submission_key].normalized_scores_data
-    submission2_fleetmix_input_source.data = submission_dict[scenario_key]['submissions'][submission_key].fleetmix_input_data
-    submission2_routesched_input_line_source.data = submission_dict[scenario_key]['submissions'][submission_key].routesched_input_line_data
-    submission2_routesched_input_start_source.data = submission_dict[scenario_key]['submissions'][submission_key].routesched_input_start_data
-    submission2_routesched_input_end_source.data = submission_dict[scenario_key]['submissions'][submission_key].routesched_input_end_data
-    submission2_fares_input_source.data = submission_dict[scenario_key]['submissions'][submission_key].fares_input_data
-    submission2_modeinc_input_source.data = submission_dict[scenario_key]['submissions'][submission_key].modeinc_input_data
-    submission2_mode_planned_pie_chart_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_planned_pie_chart_data
-    submission2_mode_realized_pie_chart_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_realized_pie_chart_data
-    submission2_mode_choice_by_time_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_choice_by_time_data
-    submission2_mode_choice_by_income_group_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_choice_by_income_group_data
-    submission2_mode_choice_by_age_group_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_choice_by_age_group_data
-    submission2_mode_choice_by_distance_source.data = submission_dict[scenario_key]['submissions'][submission_key].mode_choice_by_distance_data
-    submission2_congestion_travel_time_by_mode_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_travel_time_by_mode_data
-    submission2_congestion_travel_time_per_passenger_trip_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_travel_time_per_passenger_trip_data
-    submission2_congestion_miles_traveled_per_mode_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_miles_traveled_per_mode_data
-    submission2_congestion_bus_vmt_by_ridership_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_bus_vmt_by_ridership_data
-    submission2_congestion_on_demand_vmt_by_phases_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_on_demand_vmt_by_phases_data
-    submission2_congestion_travel_speed_source.data = submission_dict[scenario_key]['submissions'][submission_key].congestion_travel_speed_data
-    submission2_los_travel_expenditure_source.data = submission_dict[scenario_key]['submissions'][submission_key].los_travel_expenditure_data
-    submission2_los_crowding_source.data = submission_dict[scenario_key]['submissions'][submission_key].los_crowding_data
-    submission2_transit_cb_costs_source.data = submission_dict[scenario_key]['submissions'][submission_key].transit_cb_costs_data
-    submission2_transit_cb_benefits_source.data = submission_dict[scenario_key]['submissions'][submission_key].transit_cb_benefits_data
-    submission2_transit_inc_by_mode_source.data = submission_dict[scenario_key]['submissions'][submission_key].transit_inc_by_mode_data
-    submission2_sustainability_25pm_per_mode_source.data = submission_dict[scenario_key]['submissions'][submission_key].sustainability_25pm_per_mode_data
+    return update_sub_order
 
 title_div = Div(text="<img src='Dashboard_Uber_Prize/static/uber.svg' height='18'><b>Prize Visualization Dashboard</b>", width=800, height=10, style={'font-size': '200%'})
 
 ### Instantiate all submission objects and generate data sources ###
-try:
-    submission_dirs = pd.read_csv(join(dirname(__file__), 'submission_files_override.csv'))
-except IOError:
-    submission_dirs = find_submissions()
-submissions = submission_dirs.loc[submission_dirs['show'] == 1, 'submission_dir'].to_list()
+# try:
+#     submission_dirs = pd.read_csv(join(dirname(__file__), 'submission_files_override.csv'))
+# except IOError:
+#     submission_dirs = find_submissions()
+# submissions = submission_dirs.loc[submission_dirs['show'] == 1, 'submission_dir'].to_list()
+bistro_db = BistroDB('bistro','root','admin')
+simulations = bistro_db.load_simulation_df()
 
+submissions = []
 submission_dict = {}
-for scenario_submission in submissions:
-    scenario, submission = scenario_submission.split('/')
+for _, simulation in simulations.iterrows():
+    simulation_id, datetime, scenario = (
+        simulation['simulation_id'], str(simulation['datetime']),
+        simulation['scenario'])
+    submissions += [scenario+'/'+datetime]
     if scenario not in submission_dict:
         submission_dict[scenario] = {
-            'submissions': {submission: Submission(name=submission, scenario=scenario)},
-            'categories': yaml.safe_load(open(join(dirname(__file__), 'data/submissions', scenario, 'kpis.yaml')))
+            'submissions': {
+            simulation_id: Submission(
+                name=datetime, scenario=scenario, simulation_id=simulation_id)
+            },
+            'categories': yaml.safe_load(
+                open(join(dirname(__file__), 'kpis.yaml')))
         }
     else:
-        submission_dict[scenario]['submissions'][submission] = Submission(name=submission, scenario=scenario)
+        submission_dict[scenario]['submissions'][simulation_id] = Submission(
+            name=datetime, scenario=scenario, simulation_id=simulation_id)
+# for scenario_submission in submissions:
+#     scenario, submission = scenario_submission.split('/')
+#     if scenario not in submission_dict:
+#         submission_dict[scenario] = {
+#             'submissions': {submission: Submission(name=submission, scenario=scenario)},
+#             'categories': yaml.safe_load(open(join(dirname(__file__), 'kpis.yaml')))
+#         }
+#     else:
+#         submission_dict[scenario]['submissions'][submission] = Submission(name=submission, scenario=scenario)
 
 try:
     makedirs("figures")
@@ -967,188 +979,160 @@ create_dir_tree(submission2_key)
 ##############################################################
 
 ### Convert data sources into ColumnDataSources ###
-submission1_normalized_scores_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].normalized_scores_data)
-submission1_fleetmix_input_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].fleetmix_input_data)
-submission1_routesched_input_line_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].routesched_input_line_data)
-submission1_routesched_input_start_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].routesched_input_start_data)
-submission1_routesched_input_end_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].routesched_input_end_data)
-submission1_fares_input_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].fares_input_data)
-submission1_modeinc_input_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].modeinc_input_data)
-submission1_mode_planned_pie_chart_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].mode_planned_pie_chart_data)
-submission1_mode_realized_pie_chart_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].mode_realized_pie_chart_data)
-submission1_mode_choice_by_time_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].mode_choice_by_time_data)
-submission1_mode_choice_by_income_group_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].mode_choice_by_income_group_data)
-submission1_mode_choice_by_age_group_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].mode_choice_by_age_group_data)
-submission1_mode_choice_by_distance_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].mode_choice_by_distance_data)
-submission1_congestion_travel_time_by_mode_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].congestion_travel_time_by_mode_data)
-submission1_congestion_travel_time_per_passenger_trip_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].congestion_travel_time_per_passenger_trip_data)
-submission1_congestion_miles_traveled_per_mode_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].congestion_miles_traveled_per_mode_data)
-submission1_congestion_bus_vmt_by_ridership_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].congestion_bus_vmt_by_ridership_data)
-submission1_congestion_on_demand_vmt_by_phases_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].congestion_on_demand_vmt_by_phases_data)
-submission1_congestion_travel_speed_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].congestion_travel_speed_data)
-submission1_los_travel_expenditure_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].los_travel_expenditure_data)
-submission1_los_crowding_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].los_crowding_data)
-submission1_transit_cb_costs_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].transit_cb_costs_data)
-submission1_transit_cb_benefits_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].transit_cb_benefits_data)
-submission1_transit_inc_by_mode_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].transit_inc_by_mode_data)
-submission1_sustainability_25pm_per_mode_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission1_key].sustainability_25pm_per_mode_data)
 
-submission2_normalized_scores_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].normalized_scores_data)
-submission2_fleetmix_input_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].fleetmix_input_data)
-submission2_routesched_input_line_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].routesched_input_line_data)
-submission2_routesched_input_start_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].routesched_input_start_data)
-submission2_routesched_input_end_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].routesched_input_end_data)
-submission2_fares_input_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].fares_input_data)
-submission2_modeinc_input_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].modeinc_input_data)
-submission2_mode_planned_pie_chart_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].mode_planned_pie_chart_data)
-submission2_mode_realized_pie_chart_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].mode_realized_pie_chart_data)
-submission2_mode_choice_by_time_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].mode_choice_by_time_data)
-submission2_mode_choice_by_income_group_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].mode_choice_by_income_group_data)
-submission2_mode_choice_by_age_group_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].mode_choice_by_age_group_data)
-submission2_mode_choice_by_distance_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].mode_choice_by_distance_data)
-submission2_congestion_travel_time_by_mode_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].congestion_travel_time_by_mode_data)
-submission2_congestion_travel_time_per_passenger_trip_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].congestion_travel_time_per_passenger_trip_data)
-submission2_congestion_miles_traveled_per_mode_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].congestion_miles_traveled_per_mode_data)
-submission2_congestion_bus_vmt_by_ridership_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].congestion_bus_vmt_by_ridership_data)
-submission2_congestion_on_demand_vmt_by_phases_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].congestion_on_demand_vmt_by_phases_data)
-submission2_congestion_travel_speed_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].congestion_travel_speed_data)
-submission2_los_travel_expenditure_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].los_travel_expenditure_data)
-submission2_los_crowding_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].los_crowding_data)
-submission2_transit_cb_costs_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].transit_cb_costs_data)
-submission2_transit_cb_benefits_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].transit_cb_benefits_data)
-submission2_transit_inc_by_mode_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].transit_inc_by_mode_data)
-submission2_sustainability_25pm_per_mode_source = ColumnDataSource(data=submission_dict[scenario_key]['submissions'][submission2_key].sustainability_25pm_per_mode_data)
+# submission_sources basically construct data source for the plots from each
+# submission 1 and 2, grouping them with 'submission1' and 'submission2' for the
+# ploting process to find the right data more easily 
+submission_sources = {'submission1':{}, 'submission2':{}}
+for sub_order, submission_key in \
+        [('submission1', submission1_key), ('submission2', submission2_key)]:
+    submission = submission_dict[scenario_key]['submissions'][submission_key]
+    for source_name, data_name in SOURCE_NAME_DATA_PAIR:
+        submission_sources[sub_order][source_name] = ColumnDataSource(
+            data=getattr(submission, data_name))
 ###################################################
 
 ### Generate plots from ColumnDataSource's ###
-normalized_scores_1_plot = plot_normalized_scores(source=submission1_normalized_scores_source, sub_key=submission1_key)
-fleetmix_input_1_plot = plot_fleetmix_input(source=submission1_fleetmix_input_source, sub_key=submission1_key)
-routesched_input_1_plot = plot_routesched_input(
-    line_source=submission1_routesched_input_line_source, 
-    start_source=submission1_routesched_input_start_source,
-    end_source=submission1_routesched_input_end_source, sub_key=submission1_key)
-fares_input_1_plot = plot_fares_input(source=submission1_fares_input_source, sub_key=submission1_key)
-modeinc_input_1_plot = plot_modeinc_input(source=submission1_modeinc_input_source, sub_key=submission1_key)
-mode_planned_pie_chart_1_plot = plot_mode_pie_chart(source=submission1_mode_planned_pie_chart_source, choice_type='planned', sub_key=submission1_key)
-mode_realized_pie_chart_1_plot = plot_mode_pie_chart(source=submission1_mode_realized_pie_chart_source, choice_type='realized', sub_key=submission1_key)
-mode_choice_by_time_1_plot = plot_mode_choice_by_time(source=submission1_mode_choice_by_time_source, sub_key=submission1_key)
-mode_choice_by_income_group_1_plot = plot_mode_choice_by_income_group(source=submission1_mode_choice_by_income_group_source, sub_key=submission1_key)
-mode_choice_by_age_group_1_plot = plot_mode_choice_by_age_group(source=submission1_mode_choice_by_age_group_source, sub_key=submission1_key)
-mode_choice_by_distance_1_plot = plot_mode_choice_by_distance(source=submission1_mode_choice_by_distance_source, sub_key=submission1_key)
-congestion_travel_time_by_mode_1_plot = plot_congestion_travel_time_by_mode(source=submission1_congestion_travel_time_by_mode_source, sub_key=submission1_key)
-congestion_travel_time_per_passenger_trip_1_plot = plot_congestion_travel_time_per_passenger_trip(source=submission1_congestion_travel_time_per_passenger_trip_source, sub_key=submission1_key)
-congestion_miles_traveled_per_mode_1_plot = plot_congestion_miles_traveled_per_mode(source=submission1_congestion_miles_traveled_per_mode_source, sub_key=submission1_key)
-congestion_bus_vmt_by_ridership_1_plot = plot_congestion_bus_vmt_by_ridership(source=submission1_congestion_bus_vmt_by_ridership_source, sub_key=submission1_key)
-congestion_on_demand_vmt_by_phases_1_plot = plot_congestion_on_demand_vmt_by_phases(source=submission1_congestion_on_demand_vmt_by_phases_source, sub_key=submission1_key)
-congestion_travel_speed_1_plot = plot_congestion_travel_speed(source=submission1_congestion_travel_speed_source, sub_key=submission1_key)
-los_travel_expenditure_1_plot = plot_los_travel_expenditure(source=submission1_los_travel_expenditure_source, sub_key=submission1_key)
-los_crowding_1_plot = plot_los_crowding(source=submission1_los_crowding_source, sub_key=submission1_key)
-transit_cb_1_plot = plot_transit_cb(costs_source=submission1_transit_cb_costs_source, benefits_source=submission1_transit_cb_benefits_source, sub_key=submission1_key)
-transit_inc_by_mode_1_plot = plot_transit_inc_by_mode(source=submission1_transit_inc_by_mode_source, sub_key=submission1_key)
-sustainability_25pm_per_mode_1_plot = plot_sustainability_25pm_per_mode(source=submission1_sustainability_25pm_per_mode_source, sub_key=submission1_key)
-
-normalized_scores_2_plot = plot_normalized_scores(source=submission2_normalized_scores_source, sub_key=submission2_key)
-fleetmix_input_2_plot = plot_fleetmix_input(source=submission2_fleetmix_input_source, sub_key=submission2_key)
-routesched_input_2_plot = plot_routesched_input(
-    line_source=submission2_routesched_input_line_source, 
-    start_source=submission2_routesched_input_start_source,
-    end_source=submission2_routesched_input_end_source, sub_key=submission2_key)
-fares_input_2_plot = plot_fares_input(source=submission2_fares_input_source, sub_key=submission2_key)
-modeinc_input_2_plot = plot_modeinc_input(source=submission2_modeinc_input_source, sub_key=submission2_key)
-mode_planned_pie_chart_2_plot = plot_mode_pie_chart(source=submission2_mode_planned_pie_chart_source, choice_type='planned', sub_key=submission2_key)
-mode_realized_pie_chart_2_plot = plot_mode_pie_chart(source=submission2_mode_realized_pie_chart_source, choice_type='realized', sub_key=submission2_key)
-mode_choice_by_time_2_plot = plot_mode_choice_by_time(source=submission2_mode_choice_by_time_source, sub_key=submission2_key)
-mode_choice_by_income_group_2_plot = plot_mode_choice_by_income_group(source=submission2_mode_choice_by_income_group_source, sub_key=submission2_key)
-mode_choice_by_age_group_2_plot = plot_mode_choice_by_age_group(source=submission2_mode_choice_by_age_group_source, sub_key=submission2_key)
-mode_choice_by_distance_2_plot = plot_mode_choice_by_distance(source=submission2_mode_choice_by_distance_source, sub_key=submission2_key)
-congestion_travel_time_by_mode_2_plot = plot_congestion_travel_time_by_mode(source=submission2_congestion_travel_time_by_mode_source, sub_key=submission2_key)
-congestion_travel_time_per_passenger_trip_2_plot = plot_congestion_travel_time_per_passenger_trip(source=submission2_congestion_travel_time_per_passenger_trip_source, sub_key=submission2_key)
-congestion_miles_traveled_per_mode_2_plot = plot_congestion_miles_traveled_per_mode(source=submission2_congestion_miles_traveled_per_mode_source, sub_key=submission2_key)
-congestion_bus_vmt_by_ridership_2_plot = plot_congestion_bus_vmt_by_ridership(source=submission2_congestion_bus_vmt_by_ridership_source, sub_key=submission2_key)
-congestion_on_demand_vmt_by_phases_2_plot = plot_congestion_on_demand_vmt_by_phases(source=submission2_congestion_on_demand_vmt_by_phases_source, sub_key=submission2_key)
-congestion_travel_speed_2_plot = plot_congestion_travel_speed(source=submission2_congestion_travel_speed_source, sub_key=submission2_key)
-los_travel_expenditure_2_plot = plot_los_travel_expenditure(source=submission2_los_travel_expenditure_source, sub_key=submission2_key)
-los_crowding_2_plot = plot_los_crowding(source=submission2_los_crowding_source, sub_key=submission2_key)
-transit_cb_2_plot = plot_transit_cb(costs_source=submission2_transit_cb_costs_source, benefits_source=submission2_transit_cb_benefits_source, sub_key=submission2_key)
-transit_inc_by_mode_2_plot = plot_transit_inc_by_mode(source=submission2_transit_inc_by_mode_source, sub_key=submission2_key)
-sustainability_25pm_per_mode_2_plot = plot_sustainability_25pm_per_mode(source=submission2_sustainability_25pm_per_mode_source, sub_key=submission2_key)
+plots = {'submission1': {}, 'submission2': {}}
+for sub_order, sub_key in \
+        [('submission1',submission1_key), ('submission2',submission2_key)]:
+    sources = submission_sources[sub_order]
+    plots[sub_order]['normalized_scores_plot'] = plot_normalized_scores(
+        source=sources['normalized_scores_source'], sub_key=sub_key)
+    plots[sub_order]['fleetmix_input_plot'] = plot_fleetmix_input(
+        source=sources['fleetmix_input_source'], sub_key=sub_key)
+    plots[sub_order]['routesched_input_plot'] = plot_routesched_input(
+        line_source=sources['routesched_input_line_source'],
+        start_source=sources['routesched_input_start_source'],
+        end_source=sources['routesched_input_end_source'],
+        sub_key=sub_key)
+    plots[sub_order]['fares_input_plot'] = plot_fares_input(
+        source=sources['fares_input_source'], sub_key=sub_key)
+    plots[sub_order]['modeinc_input_plot'] = plot_modeinc_input(
+        source=sources['modeinc_input_source'], sub_key=sub_key)
+    plots[sub_order]['mode_planned_pie_chart_plot'] = plot_mode_pie_chart(
+        source=sources['mode_planned_pie_chart_source'],
+        choice_type='planned', sub_key=sub_key)
+    plots[sub_order]['mode_realized_pie_chart_plot'] = plot_mode_pie_chart(
+        source=sources['mode_realized_pie_chart_source'],
+        choice_type='realized', sub_key=sub_key)
+    plots[sub_order]['mode_choice_by_time_plot'] = plot_mode_choice_by_time(
+        source=sources['mode_choice_by_time_source'], sub_key=sub_key)
+    plots[sub_order]['mode_choice_by_income_group_plot'] = \
+        plot_mode_choice_by_income_group(
+            source=sources['mode_choice_by_income_group_source'],
+            sub_key=sub_key)
+    plots[sub_order]['mode_choice_by_age_group_plot'] = \
+        plot_mode_choice_by_age_group(
+            source=sources['mode_choice_by_age_group_source'],
+            sub_key=sub_key)
+    plots[sub_order]['mode_choice_by_distance_plot'] = \
+        plot_mode_choice_by_distance(
+            source=sources['mode_choice_by_distance_source'],
+            sub_key=sub_key)
+    plots[sub_order]['congestion_travel_time_by_mode_plot'] = \
+        plot_congestion_travel_time_by_mode(
+            source=sources['congestion_travel_time_by_mode_source'],
+            sub_key=sub_key)
+    plots[sub_order]['congestion_travel_time_per_passenger_trip_plot'] = \
+        plot_congestion_travel_time_per_passenger_trip(
+            source=sources['congestion_travel_time_per_passenger_trip_source'],
+            sub_key=sub_key)
+    plots[sub_order]['congestion_miles_traveled_per_mode_plot'] = \
+        plot_congestion_miles_traveled_per_mode(
+            source=sources['congestion_miles_traveled_per_mode_source'],
+            sub_key=sub_key)
+    plots[sub_order]['congestion_bus_vmt_by_ridership_plot'] = \
+        plot_congestion_bus_vmt_by_ridership(
+            source=sources['congestion_bus_vmt_by_ridership_source'],
+            sub_key=sub_key)
+    plots[sub_order]['congestion_on_demand_vmt_by_phases_plot'] = \
+        plot_congestion_on_demand_vmt_by_phases(
+            source=sources['congestion_on_demand_vmt_by_phases_source'],
+            sub_key=sub_key)
+    plots[sub_order]['congestion_travel_speed_plot'] = \
+        plot_congestion_travel_speed(
+            source=sources['congestion_travel_speed_source'], sub_key=sub_key)
+    plots[sub_order]['los_travel_expenditure_plot'] = \
+        plot_los_travel_expenditure(
+            source=sources['los_travel_expenditure_source'],
+            sub_key=sub_key)
+    plots[sub_order]['los_crowding_plot'] = plot_los_crowding(
+        source=sources['los_crowding_source'], sub_key=sub_key)
+    plots[sub_order]['transit_cb_plot'] = plot_transit_cb(
+        costs_source=sources['transit_cb_costs_source'],
+        benefits_source=sources['transit_cb_benefits_source'], sub_key=sub_key)
+    plots[sub_order]['transit_inc_by_mode_plot'] = plot_transit_inc_by_mode(
+        source=sources['transit_inc_by_mode_source'], sub_key=sub_key)
+    plots[sub_order]['sustainability_25pm_per_mode_plot'] = \
+        plot_sustainability_25pm_per_mode(
+            source=sources['sustainability_25pm_per_mode_source'],
+            sub_key=sub_key)
 ##############################################
 
 ### Gather plot objects into lists ###
-submission1_inputs_plots = [
-    fleetmix_input_1_plot,
-    routesched_input_1_plot,
-    fares_input_1_plot,
-    modeinc_input_1_plot
-]
-submission1_scores_plots = [normalized_scores_1_plot]
-submission1_outputs_mode_plots = [
-    mode_planned_pie_chart_1_plot,
-    mode_realized_pie_chart_1_plot,
-    mode_choice_by_time_1_plot,
-    mode_choice_by_income_group_1_plot,
-    mode_choice_by_age_group_1_plot,
-    mode_choice_by_distance_1_plot
-]
-submission1_outputs_congestion_plots = [
-    congestion_travel_time_by_mode_1_plot,
-    congestion_travel_time_per_passenger_trip_1_plot,
-    congestion_miles_traveled_per_mode_1_plot,
-    congestion_bus_vmt_by_ridership_1_plot,
-    congestion_on_demand_vmt_by_phases_1_plot,
-    congestion_travel_speed_1_plot
-]
-submission1_outputs_los_plots = [
-    los_travel_expenditure_1_plot,
-    los_crowding_1_plot
-]
-submission1_outputs_transitcb_plots = [
-    transit_cb_1_plot,
-    transit_inc_by_mode_1_plot
-]
-submission1_outputs_sustainability_plots = [sustainability_25pm_per_mode_1_plot]
 
-submission2_inputs_plots = [
-    fleetmix_input_2_plot,
-    routesched_input_2_plot,
-    fares_input_2_plot,
-    modeinc_input_2_plot
+submission_inputs_plots = [
+    'fleetmix_input_plot',
+    'routesched_input_plot',
+    'fares_input_plot',
+    'modeinc_input_plot'
 ]
-submission2_scores_plots = [normalized_scores_2_plot]
-submission2_outputs_mode_plots = [
-    mode_planned_pie_chart_2_plot,
-    mode_realized_pie_chart_2_plot,
-    mode_choice_by_time_2_plot,
-    mode_choice_by_income_group_2_plot,
-    mode_choice_by_age_group_2_plot,
-    mode_choice_by_distance_2_plot
+submission_scores_plots = ['normalized_scores_plot']
+submission_outputs_mode_plots = [
+    'mode_planned_pie_chart_plot',
+    'mode_realized_pie_chart_plot',
+    'mode_choice_by_time_plot',
+    'mode_choice_by_income_group_plot',
+    'mode_choice_by_age_group_plot',
+    'mode_choice_by_distance_plot'
 ]
-submission2_outputs_congestion_plots = [
-    congestion_travel_time_by_mode_2_plot,
-    congestion_travel_time_per_passenger_trip_2_plot,
-    congestion_miles_traveled_per_mode_2_plot,
-    congestion_bus_vmt_by_ridership_2_plot,
-    congestion_on_demand_vmt_by_phases_2_plot,
-    congestion_travel_speed_2_plot
+submission_outputs_congestion_plots = [
+    'congestion_travel_time_by_mode_plot',
+    'congestion_travel_time_per_passenger_trip_plot',
+    'congestion_miles_traveled_per_mode_plot',
+    'congestion_bus_vmt_by_ridership_plot',
+    'congestion_on_demand_vmt_by_phases_plot',
+    'congestion_travel_speed_plot'
 ]
-submission2_outputs_los_plots = [
-    los_travel_expenditure_2_plot,
-    los_crowding_2_plot
+submission_outputs_los_plots = [
+    'los_travel_expenditure_plot',
+    'los_crowding_plot'
 ]
-submission2_outputs_transitcb_plots = [
-    transit_cb_2_plot,
-    transit_inc_by_mode_2_plot
+submission_outputs_transitcb_plots = [
+    'transit_cb_plot',
+    'transit_inc_by_mode_plot'
 ]
-submission2_outputs_sustainability_plots = [sustainability_25pm_per_mode_2_plot]
+submission_outputs_sustainability_plots = ['sustainability_25pm_per_mode_plot']
+
 ######################################
-
-inputs_plots = row(column(submission1_inputs_plots), column(submission2_inputs_plots))
-scores_plots = column(column(submission1_scores_plots), column(submission2_scores_plots))
-outputs_mode_plots = row(column(submission1_outputs_mode_plots), column(submission2_outputs_mode_plots))
-outputs_los_plots = row(column(submission1_outputs_los_plots), column(submission2_outputs_los_plots))
-outputs_congestion_plots = row(column(submission1_outputs_congestion_plots), column(submission2_outputs_congestion_plots))
-outputs_transitcb_plots = row(column(submission1_outputs_transitcb_plots), column(submission2_outputs_transitcb_plots))
-outputs_sustainability_plots = row(column(submission1_outputs_sustainability_plots), column(submission2_outputs_sustainability_plots))
+sub_orders = ['submission1','submission2']
+# 
+# the code below is equivalent to:
+# row(column([plots['submission1'][p1], plots['submission1'][p2]], ...),
+#     column([plots['submission2'][p1], ...])
+#     ...)
+inputs_plots = row(
+    *[column([plots[sub_order][p] for p in submission_inputs_plots])
+    for sub_order in sub_orders])
+scores_plots = column(
+    *[column([plots[sub_order][p] for p in submission_scores_plots])
+    for sub_order in sub_orders])
+outputs_mode_plots = row(
+    *[column([plots[sub_order][p] for p in submission_outputs_mode_plots])
+    for sub_order in sub_orders])
+outputs_los_plots = row(
+    *[column([plots[sub_order][p] for p in submission_outputs_los_plots])
+    for sub_order in sub_orders])
+outputs_congestion_plots = row(
+    *[column([plots[sub_order][p] for p in submission_outputs_congestion_plots])
+    for sub_order in sub_orders])
+outputs_transitcb_plots = row(
+    *[column([plots[sub_order][p] for p in submission_outputs_transitcb_plots])
+    for sub_order in sub_orders])
+outputs_sustainability_plots = row(
+    *[column([plots[sub_order][p] for p in submission_outputs_sustainability_plots])
+    for sub_order in sub_orders])
 
 submission1_select = Select(value='{}/{}'.format(scenario_key, submission1_key),
                      title='Submission 1', 
@@ -1159,8 +1143,13 @@ submission2_select = Select(value='{}/{}'.format(scenario_key, submission2_key),
 
 pulldowns = row(submission1_select, submission2_select)
 
-submission1_select.on_change('value', update_submission1)
-submission2_select.on_change('value', update_submission2)
+# update_submission it self isn't a real 'function', it returns another function
+# that will update plot data source for either submission1 or 2 depends on the
+# inputs name.
+submission1_select.on_change(
+    'value', update_submission(submission_sources, 'submission1'))
+submission2_select.on_change(
+    'value', update_submission(submission_sources, 'submission2'))
 
 inputs = layout([inputs_plots], sizing_mode='fixed')
 scores = layout([[scores_plots]], sizing_mode='fixed')
