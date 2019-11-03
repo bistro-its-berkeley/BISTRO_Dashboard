@@ -905,7 +905,14 @@ def update_submission(submission_sources, sub_order):
         # a different submission from the dropdown
         scenario_key, submission_key = new.split('/')
         create_dir_tree(submission_key)
+        if sub_order == 'submission1':
+            submission1_key = submission_key
+        else:
+            submission2_key = submission_key
+
         submission = submission_dict[scenario_key]['submissions'][submission_key]
+        submission.get_data()
+        submission.make_data_sources()
         for source_name, data_name in SOURCE_NAME_DATA_PAIR:
             submission_sources[sub_order][source_name].data = \
                 getattr(submission, data_name)
@@ -928,21 +935,22 @@ simulations = bistro_db.load_simulation_df()
 submissions = []
 submission_dict = {}
 for _, simulation in simulations.iterrows():
-    simulation_id, datetime, scenario = (
+    simulation_id, datetime, scenario, name = (
         simulation['simulation_id'], str(simulation['datetime']),
-        simulation['scenario'])
-    submissions += [scenario+'/'+datetime]
+        simulation['scenario'], simulation['name'])
+    submissions += [scenario+'/'+name+'@'+datetime]
+    submission_name = name+'@'+datetime
     if scenario not in submission_dict:
         submission_dict[scenario] = {
             'submissions': {
-            simulation_id: Submission(
-                name=datetime, scenario=scenario, simulation_id=simulation_id)
+            submission_name: Submission(
+                name=submission_name, scenario=scenario, simulation_id=simulation_id)
             },
             'categories': yaml.safe_load(
                 open(join(dirname(__file__), 'kpis.yaml')))
         }
     else:
-        submission_dict[scenario]['submissions'][simulation_id] = Submission(
+        submission_dict[scenario]['submissions'][submission_name] = Submission(
             name=datetime, scenario=scenario, simulation_id=simulation_id)
 # for scenario_submission in submissions:
 #     scenario, submission = scenario_submission.split('/')
@@ -989,6 +997,8 @@ submission_sources = {'submission1':{}, 'submission2':{}}
 for sub_order, submission_key in \
         [('submission1', submission1_key), ('submission2', submission2_key)]:
     submission = submission_dict[scenario_key]['submissions'][submission_key]
+    submission.get_data()
+    submission.make_data_sources()
     for source_name, data_name in SOURCE_NAME_DATA_PAIR:
         submission_sources[sub_order][source_name] = ColumnDataSource(
             data=getattr(submission, data_name))
@@ -1000,82 +1010,81 @@ for sub_order, sub_key in \
         [('submission1',submission1_key), ('submission2',submission2_key)]:
     sources = submission_sources[sub_order]
     submission = submission_dict[scenario_key]['submissions'][sub_key]
-    sub_name = submission.scenario + submission.name
     plots[sub_order]['normalized_scores_plot'] = plot_normalized_scores(
-        source=sources['normalized_scores_source'], sub_key=sub_name)
+        source=sources['normalized_scores_source'], sub_key=sub_key)
     plots[sub_order]['fleetmix_input_plot'] = plot_fleetmix_input(
-        source=sources['fleetmix_input_source'], sub_key=sub_name,
+        source=sources['fleetmix_input_source'], sub_key=sub_key,
         route_ids=submission.route_ids)
     plots[sub_order]['routesched_input_plot'] = plot_routesched_input(
         line_source=sources['routesched_input_line_source'],
         start_source=sources['routesched_input_start_source'],
         end_source=sources['routesched_input_end_source'],
-        sub_key=sub_name)
+        sub_key=sub_key)
     plots[sub_order]['fares_input_plot'] = plot_fares_input(
-        source=sources['fares_input_source'], sub_key=sub_name,
+        source=sources['fares_input_source'], sub_key=sub_key,
         route_ids=submission.route_ids)
     plots[sub_order]['modeinc_input_plot'] = plot_modeinc_input(
-        source=sources['modeinc_input_source'], sub_key=sub_name)
+        source=sources['modeinc_input_source'], sub_key=sub_key)
     plots[sub_order]['mode_planned_pie_chart_plot'] = plot_mode_pie_chart(
         source=sources['mode_planned_pie_chart_source'],
-        choice_type='planned', sub_key=sub_name)
+        choice_type='planned', sub_key=sub_key)
     plots[sub_order]['mode_realized_pie_chart_plot'] = plot_mode_pie_chart(
         source=sources['mode_realized_pie_chart_source'],
-        choice_type='realized', sub_key=sub_name)
+        choice_type='realized', sub_key=sub_key)
     plots[sub_order]['mode_choice_by_time_plot'] = plot_mode_choice_by_time(
-        source=sources['mode_choice_by_time_source'], sub_key=sub_name)
+        source=sources['mode_choice_by_time_source'], sub_key=sub_key)
     plots[sub_order]['mode_choice_by_income_group_plot'] = \
         plot_mode_choice_by_income_group(
             source=sources['mode_choice_by_income_group_source'],
-            sub_key=sub_name)
+            sub_key=sub_key)
     plots[sub_order]['mode_choice_by_age_group_plot'] = \
         plot_mode_choice_by_age_group(
             source=sources['mode_choice_by_age_group_source'],
-            sub_key=sub_name)
+            sub_key=sub_key)
     plots[sub_order]['mode_choice_by_distance_plot'] = \
         plot_mode_choice_by_distance(
             source=sources['mode_choice_by_distance_source'],
-            sub_key=sub_name)
+            sub_key=sub_key)
     plots[sub_order]['congestion_travel_time_by_mode_plot'] = \
         plot_congestion_travel_time_by_mode(
             source=sources['congestion_travel_time_by_mode_source'],
-            sub_key=sub_name)
+            sub_key=sub_key)
     plots[sub_order]['congestion_travel_time_per_passenger_trip_plot'] = \
         plot_congestion_travel_time_per_passenger_trip(
             source=sources['congestion_travel_time_per_passenger_trip_source'],
-            sub_key=sub_name)
+            sub_key=sub_key)
     plots[sub_order]['congestion_miles_traveled_per_mode_plot'] = \
         plot_congestion_miles_traveled_per_mode(
             source=sources['congestion_miles_traveled_per_mode_source'],
-            sub_key=sub_name)
+            sub_key=sub_key)
     plots[sub_order]['congestion_bus_vmt_by_ridership_plot'] = \
         plot_congestion_bus_vmt_by_ridership(
             source=sources['congestion_bus_vmt_by_ridership_source'],
-            sub_key=sub_name)
+            sub_key=sub_key)
     plots[sub_order]['congestion_on_demand_vmt_by_phases_plot'] = \
         plot_congestion_on_demand_vmt_by_phases(
             source=sources['congestion_on_demand_vmt_by_phases_source'],
-            sub_key=sub_name)
+            sub_key=sub_key)
     plots[sub_order]['congestion_travel_speed_plot'] = \
         plot_congestion_travel_speed(
-            source=sources['congestion_travel_speed_source'], sub_key=sub_name)
+            source=sources['congestion_travel_speed_source'], sub_key=sub_key)
     plots[sub_order]['los_travel_expenditure_plot'] = \
         plot_los_travel_expenditure(
             source=sources['los_travel_expenditure_source'],
-            sub_key=sub_name)
+            sub_key=sub_key)
     plots[sub_order]['los_crowding_plot'] = plot_los_crowding(
-        source=sources['los_crowding_source'], sub_key=sub_name,
+        source=sources['los_crowding_source'], sub_key=sub_key,
         route_ids=submission.route_ids)
     plots[sub_order]['transit_cb_plot'] = plot_transit_cb(
         costs_source=sources['transit_cb_costs_source'],
-        benefits_source=sources['transit_cb_benefits_source'], sub_key=sub_name,
+        benefits_source=sources['transit_cb_benefits_source'], sub_key=sub_key,
         route_ids=submission.route_ids)
     plots[sub_order]['transit_inc_by_mode_plot'] = plot_transit_inc_by_mode(
-        source=sources['transit_inc_by_mode_source'], sub_key=sub_name)
+        source=sources['transit_inc_by_mode_source'], sub_key=sub_key)
     plots[sub_order]['sustainability_25pm_per_mode_plot'] = \
         plot_sustainability_25pm_per_mode(
             source=sources['sustainability_25pm_per_mode_source'],
-            sub_key=sub_name)
+            sub_key=sub_key)
 ##############################################
 
 ### Gather plot objects into lists ###

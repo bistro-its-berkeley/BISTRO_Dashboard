@@ -87,11 +87,12 @@ class BistroDB(object):
 
     def load_simulation_df(self):
         data = self.query("""
-            SELECT BIN_TO_UUID(`run_id`), `datetime`, `scenario`
+            SELECT BIN_TO_UUID(`run_id`), `datetime`, `scenario`, `name`
             FROM simulationrun
             WHERE scenario = 'sioux_faux-15k'
             """)
-        return pd.DataFrame(data, columns=['simulation_id','datetime','scenario'])
+        return pd.DataFrame(
+            data, columns=['simulation_id','datetime','scenario', 'name'])
 
     def load_frequency(self, simulation_id):
         db_cols = ['agency_id', 'route_id', 'service_start',

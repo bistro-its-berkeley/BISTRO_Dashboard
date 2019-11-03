@@ -53,6 +53,8 @@ class Submission():
 #        self.scenario = 'sioux_faux-15k'
 #        self.simulation_id = '5673feca-f45a-11e9-ba19-acde48001122'
         self.modes = ['ride_hail', 'car', 'drive_transit', 'walk', 'walk_transit']
+        self.data_loaded = False
+        self.data_source_made = False
 
         if self.simulation_id is None:
             self.submissions_dir = join(
@@ -60,14 +62,15 @@ class Submission():
                 'data/submissions/{}/{}'.format(self.scenario, self.name))
             self.reference_dir = join(
                 dirname(__file__), 'data/sioux_faux_bus_lines')
-            self.get_data(from_csv=True)
-        else:
-            self.get_data(from_db=True)
-        self.make_data_sources()
 
-    def get_data(self, from_csv=False, from_db=False):
+        # self.get_data()
+        # self.make_data_sources()
 
-        if from_csv:
+    def get_data(self):
+        if self.data_loaded:
+            return
+
+        if self.simulation_id is None:
             self.frequency_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/FrequencyAdjustment.csv'))
             self.fares_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/MassTransitFares.csv'))
             self.incentives_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/ModeIncentives.csv'))
@@ -98,7 +101,8 @@ class Submission():
                 "trip_id", "route_id"]].set_index("trip_id", drop=True).T.to_dict('records')[0]
             self.operational_costs = pd.read_csv(join(self.reference_dir, "vehicleCosts.csv"))[[
                 "vehicleTypeId", "opAndMaintCost"]].set_index("vehicleTypeId", drop=True).T.to_dict("records")[0]
-        elif from_db:
+            self.data_loaded = True
+        else:
             db = BistroDB(
                 db_name='bistro', user_name='bistroclt', db_key='client',
                 host='13.56.123.155')
@@ -141,9 +145,12 @@ class Submission():
             self.operational_costs = db.load_vehicle_cost(self.scenario)[
                 ["vehicleTypeId", "opAndMaintCost"]
             ].set_index("vehicleTypeId", drop=True).T.to_dict("records")[0]
+            self.data_loaded = True
 
     def make_data_sources(self):
-
+        if self.data_source_made:
+            return
+        
         self.modeinc_input_data = self.make_modeinc_input_data()
         self.fleetmix_input_data = self.make_fleetmix_input_data()
         self.fares_input_data = self.make_fares_input_data()
@@ -187,6 +194,7 @@ class Submission():
         
         self.sustainability_25pm_per_mode_data = \
             self.make_sustainability_25pm_per_mode_data()
+        self.data_source_made = True
 
     def splitting_min_max(self, df, name_column):
         """ Parsing and splitting the ranges in the "age" (or "income") columns into two new columns:
