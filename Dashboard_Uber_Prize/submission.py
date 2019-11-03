@@ -99,7 +99,9 @@ class Submission():
             self.operational_costs = pd.read_csv(join(self.reference_dir, "vehicleCosts.csv"))[[
                 "vehicleTypeId", "opAndMaintCost"]].set_index("vehicleTypeId", drop=True).T.to_dict("records")[0]
         elif from_db:
-            db = BistroDB('bistro','root','admin')
+            db = BistroDB(
+                db_name='bistro', user_name='bistroclt', db_key='client',
+                host='13.56.123.155')
             self.frequency_df = db.load_frequency(self.simulation_id)
             self.fares_df = db.load_fares(self.simulation_id)
             self.incentives_df = db.load_incentives(self.simulation_id)
@@ -130,7 +132,7 @@ class Submission():
             ].set_index("vehicleTypeId", drop=True).T.to_dict("records")[0]
 
             self.agency_ids = db.load_agency(self.scenario)
-            self.route_ids = db.load_route_ids(self.scenario)
+            self.route_ids = [str(r_id) for r_id in db.load_route_ids(self.scenario)]
 
             self.trip_to_route = db.load_trip_to_route(self.scenario)[
                 ["trip_id", "route_id"]
@@ -906,7 +908,7 @@ class Submission():
         # emissions for each mode
         emissions_bus = round(
             vmt[vmt["mode"] == "bus"]["length"].apply(
-                lambda x: x * 0.000621371 * 0.259366648).sum(), 0)
+                lambda x: x * 0.000621371 * 0.0025936648).sum(), 0)
         emissions_on_demand = round(
             vmt[vmt["vehicle"].str.contains("rideHailVehicle")]["length"].apply(
                 lambda x: x * 0.000621371 * 0.001716086).sum(), 0)

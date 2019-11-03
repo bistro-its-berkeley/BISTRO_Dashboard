@@ -22,7 +22,7 @@ from db_loader import BistroDB
 
 
 HOURS = [str(h) for h in range(24)]
-ROUTE_IDS = ['1340', '1341', '1342', '1343', '1344', '1345', '1346', '1347', '1348', '1349', '1350', '1351']
+#ROUTE_IDS = ['1340', '1341', '1342', '1343', '1344', '1345', '1346', '1347', '1348', '1349', '1350', '1351']
 
 BUSES_LIST = ['BUS-DEFAULT', 'BUS-SMALL-HD', 'BUS-STD-HD', 'BUS-STD-ART']
 MODES = ['ride_hail', 'car', 'drive_transit', 'walk', 'walk_transit']#, 'mixed_mode']
@@ -95,9 +95,9 @@ def plot_normalized_scores(source, sub_key=1, savefig='None'):
 
     return p
 
-def plot_fleetmix_input(source, sub_key=1, savefig='None'):
+def plot_fleetmix_input(source, sub_key=1, savefig='None', route_ids=[]):
 
-    p = figure(x_range=BUSES_LIST, y_range=[str(route_id) for route_id in ROUTE_IDS], 
+    p = figure(x_range=BUSES_LIST, y_range=[str(route_id) for route_id in route_ids], 
                plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
@@ -148,11 +148,11 @@ def plot_routesched_input(line_source, start_source, end_source, sub_key=1, save
 
     return p
 
-def plot_fares_input(source, max_fare=10, max_age=121, sub_key=1, savefig='None'):
+def plot_fares_input(source, max_fare=10, max_age=121, sub_key=1, savefig='None', route_ids=[]):
 
     mapper = LinearColorMapper(palette=Plasma256[:120:-1], low=0.0, high=max_fare)
 
-    p = figure(x_range=(0, max_age), y_range=ROUTE_IDS, 
+    p = figure(x_range=(0, max_age), y_range=route_ids, 
                plot_height=350, plot_width=475,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
@@ -286,7 +286,7 @@ def plot_mode_pie_chart(source, choice_type='planned', sub_key=1, savefig='None'
 
 def plot_mode_choice_by_time(source, sub_key=1, savefig='None'):
 
-    p = figure(x_range=HOURS, y_range=(0, 10000), 
+    p = figure(x_range=HOURS, y_range=(0, 14000), 
                plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
@@ -699,11 +699,11 @@ def plot_los_travel_expenditure(source, sub_key=1, savefig='None'):
 
     return p
 
-def plot_los_crowding(source, sub_key=1, savefig='None'):
+def plot_los_crowding(source, sub_key=1, savefig='None', route_ids=[]):
 
     # AM peak = 7am-10am, PM Peak = 5pm-8pm, Early Morning, Midday, Late Evening = in between
     labels = ["Early Morning (12a-7a)", "AM Peak (7a-10a)", "Midday (10a-5p)", "PM Peak (5p-8p)", "Late Evening (8p-12a)"]
-    p = figure(x_range=ROUTE_IDS, #y_range=(0, 15), 
+    p = figure(x_range=route_ids, #y_range=(0, 15), 
                plot_height=350, plot_width=600, 
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
@@ -739,11 +739,11 @@ def plot_los_crowding(source, sub_key=1, savefig='None'):
 
     return p
 
-def plot_transit_cb(costs_source, benefits_source, sub_key=1, savefig='None'):
+def plot_transit_cb(costs_source, benefits_source, sub_key=1, savefig='None', route_ids=[]):
 
     costs_labels = ["OperationalCosts", "FuelCost"]
     benefits_label = ["Fare"]
-    p = figure(x_range=ROUTE_IDS, #y_range=(-20e6, 25e6), 
+    p = figure(x_range=route_ids, #y_range=(-20e6, 25e6), 
                plot_height=350, plot_width=600, 
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
@@ -920,7 +920,9 @@ title_div = Div(text="<img src='Dashboard_Uber_Prize/static/uber.svg' height='18
 # except IOError:
 #     submission_dirs = find_submissions()
 # submissions = submission_dirs.loc[submission_dirs['show'] == 1, 'submission_dir'].to_list()
-bistro_db = BistroDB('bistro','root','admin')
+bistro_db = BistroDB(
+    db_name='bistro', user_name='bistroclt', db_key='client',
+    host='13.56.123.155')
 simulations = bistro_db.load_simulation_df()
 
 submissions = []
@@ -997,77 +999,83 @@ plots = {'submission1': {}, 'submission2': {}}
 for sub_order, sub_key in \
         [('submission1',submission1_key), ('submission2',submission2_key)]:
     sources = submission_sources[sub_order]
+    submission = submission_dict[scenario_key]['submissions'][sub_key]
+    sub_name = submission.scenario + submission.name
     plots[sub_order]['normalized_scores_plot'] = plot_normalized_scores(
-        source=sources['normalized_scores_source'], sub_key=sub_key)
+        source=sources['normalized_scores_source'], sub_key=sub_name)
     plots[sub_order]['fleetmix_input_plot'] = plot_fleetmix_input(
-        source=sources['fleetmix_input_source'], sub_key=sub_key)
+        source=sources['fleetmix_input_source'], sub_key=sub_name,
+        route_ids=submission.route_ids)
     plots[sub_order]['routesched_input_plot'] = plot_routesched_input(
         line_source=sources['routesched_input_line_source'],
         start_source=sources['routesched_input_start_source'],
         end_source=sources['routesched_input_end_source'],
-        sub_key=sub_key)
+        sub_key=sub_name)
     plots[sub_order]['fares_input_plot'] = plot_fares_input(
-        source=sources['fares_input_source'], sub_key=sub_key)
+        source=sources['fares_input_source'], sub_key=sub_name,
+        route_ids=submission.route_ids)
     plots[sub_order]['modeinc_input_plot'] = plot_modeinc_input(
-        source=sources['modeinc_input_source'], sub_key=sub_key)
+        source=sources['modeinc_input_source'], sub_key=sub_name)
     plots[sub_order]['mode_planned_pie_chart_plot'] = plot_mode_pie_chart(
         source=sources['mode_planned_pie_chart_source'],
-        choice_type='planned', sub_key=sub_key)
+        choice_type='planned', sub_key=sub_name)
     plots[sub_order]['mode_realized_pie_chart_plot'] = plot_mode_pie_chart(
         source=sources['mode_realized_pie_chart_source'],
-        choice_type='realized', sub_key=sub_key)
+        choice_type='realized', sub_key=sub_name)
     plots[sub_order]['mode_choice_by_time_plot'] = plot_mode_choice_by_time(
-        source=sources['mode_choice_by_time_source'], sub_key=sub_key)
+        source=sources['mode_choice_by_time_source'], sub_key=sub_name)
     plots[sub_order]['mode_choice_by_income_group_plot'] = \
         plot_mode_choice_by_income_group(
             source=sources['mode_choice_by_income_group_source'],
-            sub_key=sub_key)
+            sub_key=sub_name)
     plots[sub_order]['mode_choice_by_age_group_plot'] = \
         plot_mode_choice_by_age_group(
             source=sources['mode_choice_by_age_group_source'],
-            sub_key=sub_key)
+            sub_key=sub_name)
     plots[sub_order]['mode_choice_by_distance_plot'] = \
         plot_mode_choice_by_distance(
             source=sources['mode_choice_by_distance_source'],
-            sub_key=sub_key)
+            sub_key=sub_name)
     plots[sub_order]['congestion_travel_time_by_mode_plot'] = \
         plot_congestion_travel_time_by_mode(
             source=sources['congestion_travel_time_by_mode_source'],
-            sub_key=sub_key)
+            sub_key=sub_name)
     plots[sub_order]['congestion_travel_time_per_passenger_trip_plot'] = \
         plot_congestion_travel_time_per_passenger_trip(
             source=sources['congestion_travel_time_per_passenger_trip_source'],
-            sub_key=sub_key)
+            sub_key=sub_name)
     plots[sub_order]['congestion_miles_traveled_per_mode_plot'] = \
         plot_congestion_miles_traveled_per_mode(
             source=sources['congestion_miles_traveled_per_mode_source'],
-            sub_key=sub_key)
+            sub_key=sub_name)
     plots[sub_order]['congestion_bus_vmt_by_ridership_plot'] = \
         plot_congestion_bus_vmt_by_ridership(
             source=sources['congestion_bus_vmt_by_ridership_source'],
-            sub_key=sub_key)
+            sub_key=sub_name)
     plots[sub_order]['congestion_on_demand_vmt_by_phases_plot'] = \
         plot_congestion_on_demand_vmt_by_phases(
             source=sources['congestion_on_demand_vmt_by_phases_source'],
-            sub_key=sub_key)
+            sub_key=sub_name)
     plots[sub_order]['congestion_travel_speed_plot'] = \
         plot_congestion_travel_speed(
-            source=sources['congestion_travel_speed_source'], sub_key=sub_key)
+            source=sources['congestion_travel_speed_source'], sub_key=sub_name)
     plots[sub_order]['los_travel_expenditure_plot'] = \
         plot_los_travel_expenditure(
             source=sources['los_travel_expenditure_source'],
-            sub_key=sub_key)
+            sub_key=sub_name)
     plots[sub_order]['los_crowding_plot'] = plot_los_crowding(
-        source=sources['los_crowding_source'], sub_key=sub_key)
+        source=sources['los_crowding_source'], sub_key=sub_name,
+        route_ids=submission.route_ids)
     plots[sub_order]['transit_cb_plot'] = plot_transit_cb(
         costs_source=sources['transit_cb_costs_source'],
-        benefits_source=sources['transit_cb_benefits_source'], sub_key=sub_key)
+        benefits_source=sources['transit_cb_benefits_source'], sub_key=sub_name,
+        route_ids=submission.route_ids)
     plots[sub_order]['transit_inc_by_mode_plot'] = plot_transit_inc_by_mode(
-        source=sources['transit_inc_by_mode_source'], sub_key=sub_key)
+        source=sources['transit_inc_by_mode_source'], sub_key=sub_name)
     plots[sub_order]['sustainability_25pm_per_mode_plot'] = \
         plot_sustainability_25pm_per_mode(
             source=sources['sustainability_25pm_per_mode_source'],
-            sub_key=sub_key)
+            sub_key=sub_name)
 ##############################################
 
 ### Gather plot objects into lists ###

@@ -13,13 +13,14 @@ class BistroDB(object):
     connection = None
     cursor = None
 
-    def __init__(self, db_name, user_name, db_key):
+    def __init__(self, db_name, user_name, db_key, host='localhost'):
 
         self.db_name = db_name
         self.user_name = user_name
         self.db_key = db_key
+        self.host = host
 
-        self.connection = self.connect_to_db(self.user_name, self.db_key)
+        self.connection = self.connect_to_db(self.host, self.user_name, self.db_key)
         self.cursor = self.get_cursor()
 
     def __del__(self):
@@ -28,7 +29,7 @@ class BistroDB(object):
             print("Connection to DB {} closed".format(self.db_name))
 
     @staticmethod
-    def connect_to_db(user_name, db_key):
+    def connect_to_db(host, user_name, db_key):
         """
         Takes in the Database name, user name and password return connection to the database.
         If input invalid or connection has problem, return None
@@ -41,11 +42,11 @@ class BistroDB(object):
 
         try:
             connection = mysql.connector.connect(
-                host='localhost', user=user_name, password=db_key
+                host=host, user=user_name, password=db_key
             )
 
             if connection.is_connected():
-                print("Connected to DB")
+                print("Connected to DB at {}".format(host))
                 return connection
             else:
                 print("Not able to connect DB")
@@ -88,6 +89,7 @@ class BistroDB(object):
         data = self.query("""
             SELECT BIN_TO_UUID(`run_id`), `datetime`, `scenario`
             FROM simulationrun
+            WHERE scenario = 'sioux_faux-15k'
             """)
         return pd.DataFrame(data, columns=['simulation_id','datetime','scenario'])
 
