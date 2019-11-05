@@ -85,6 +85,11 @@ class BistroDB(object):
         self.cursor.execute(q)
         return self.cursor.fetchall()
 
+    @staticmethod
+    def binary_ids(simulation_ids):
+        return ','.join(
+            ["UUID_TO_BIN('{}')".format(s_id) for s_id in simulation_ids])
+
     def load_simulation_df(self):
         data = self.query("""
             SELECT BIN_TO_UUID(`run_id`), `datetime`, `scenario`, `name`
@@ -161,12 +166,23 @@ class BistroDB(object):
 
         return df[['agencyId','routeId','vehicleTypeId']]
 
-    def load_scores(self, simulation_id):
-        db_cols = ['component','weight','z_mean','z_stddev', 'raw_score',
-                   'submission_score']
-        data = self.get_table(
-            'score', cols=db_cols,
-            condition="WHERE run_id = UUID_TO_BIN('{}')".format(simulation_id))
+    def load_scores(self, simulation_ids):
+        if len(simulation_ids) > 1:
+            db_cols = ['component','AVG(weight)','AVG(z_mean)','AVG(z_stddev)',
+                'AVG(raw_score)', 'AVG(submission_score)']
+            data = self.get_table(
+                'score', cols=db_cols,
+                condition="WHERE run_id IN ({}) GROUP BY component".format(
+                    self.binary_ids(simulation_ids))
+            )
+        else:
+            db_cols = ['component','weight','z_mean','z_stddev', 'raw_score',
+                       'submission_score']
+            data = self.get_table(
+                'score', cols=db_cols,
+                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                    simulation_ids[0])
+            )
 
         df = pd.DataFrame(
             data,
@@ -175,22 +191,30 @@ class BistroDB(object):
             )
         return df
 
-
     def load_activities(self, scenario):
         pass
 
     def load_household(self, scenario):
         pass
 
-    def load_legs(self, simulation_id):
-        db_cols = ['distance','leg_mode','vehicle','fare']
-        data = self.get_table(
-            'leg', cols=db_cols,
-            condition="WHERE run_id = UUID_TO_BIN('{}')".format(simulation_id))
+    def load_legs(self, simulation_ids):
+        db_cols = ['distance','leg_mode','vehicle','fare','fuel_cost']
+
+        if len(simulation_ids) > 1:
+            data = self.get_table(
+                'leg', cols=db_cols,
+                condition="WHERE run_id IN ({})".format(
+                    self.binary_ids(simulation_ids))
+            )
+        else:
+            data = self.get_table(
+                'leg', cols=db_cols,
+                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                    simulation_ids[0]))
 
         df = pd.DataFrame(
             data,
-            columns=['Distance_m','Mode','Veh','Fare'])
+            columns=['Distance_m','Mode','Veh','Fare','FuelCost'])
         return df
 
     def load_vehicles(self, scenario):
@@ -214,14 +238,22 @@ class BistroDB(object):
 
         return df
 
-    def load_paths(self, simulation_id, scenario):
+    def load_paths(self, simulation_ids, scenario):
         # mode length vehicle "numPassengers", "vehicleType", "departureTime", "arrivalTime" FuelCost
 
         db_cols = ['vehicle_id','distance','mode','start_time','end_time',
                    'num_passengers','fuel_cost']
-        data = self.get_table(
-            'pathtraversal', cols=db_cols,
-            condition="WHERE run_id = UUID_TO_BIN('{}')".format(simulation_id))
+        if len(simulation_ids) > 1:
+            data = self.get_table(
+                'pathtraversal', cols=db_cols,
+                condition="WHERE run_id IN ({})".format(
+                    self.binary_ids(simulation_ids))
+            )
+        else:
+            data = self.get_table(
+                'pathtraversal', cols=db_cols,
+                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                    simulation_ids[0]))
 
         path_df = pd.DataFrame(
             data,
@@ -240,47 +272,64 @@ class BistroDB(object):
         df = pd.DataFrame(data, columns=['PID','Age','income'])
         return df
 
-    def load_trips(self, simulation_id):
+    def load_trips(self, simulation_ids):
         # pid realizedmode distance trip_num Duration_sec(end - begin) fuel_cost fare incentive
         db_cols = ['person_id', 'realized_mode', 'distance', 'trip_num',
                    'trip_start', 'trip_end', 'fuel_cost', 'fare', 'toll',
                    'incentives']
-        data = self.get_table(
-            'trip', cols=db_cols,
-            condition="WHERE run_id = UUID_TO_BIN('{}')".format(simulation_id))
+        if len(simulation_ids) > 1:
+            data = self.get_table(
+                'trip', cols=db_cols,
+                condition="WHERE run_id IN ({})".format(
+                    self.binary_ids(simulation_ids))
+            )
+        else:
+            data = self.get_table(
+                'trip', cols=db_cols,
+                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                    simulation_ids[0]))
 
         df = pd.DataFrame(data, columns=['PID', 'realizedTripMode', 'Distance_m', 'Trip_ID', 'Start_time', 'End_time', 'FuelCost', 'Fare', 'Toll', 'Incentive'])
         df['Duration_sec'] = df['End_time'] - df['Start_time']
 
         return df
 
-    def load_mode_choice(self, simulation_id):
-        db_cols = ['iterations', 'mode', 'count']
-        data = self.get_table(
-            'modechoice', cols=db_cols,
-            condition="WHERE run_id = UUID_TO_BIN('{}')".format(simulation_id))
+    def load_mode_choice(self, simulation_ids, realized=False):
+        table = 'realizedmodechoice' if realized else 'modechoice'
+
+        if len(simulation_ids) > 1:
+            db_cols = ['iterations', 'mode', 'FLOOR(AVG(count))']
+            data = self.get_table(
+                table, cols=db_cols,
+                condition="WHERE run_id IN ({}) GROUP BY iterations, mode".format(
+                    self.binary_ids(simulation_ids))
+            )
+        else:
+            db_cols = ['iterations', 'mode', 'count']        
+            data = self.get_table(
+                table, cols=db_cols,
+                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                    simulation_ids[0]))
 
         df = pd.DataFrame(data, columns=['iterations', 'mode', 'count'])
         df = df.pivot_table(index='iterations', columns='mode', values='count') 
         del df.columns.name
         return df.reset_index()
 
-    def load_realized_mode_choice(self, simulation_id):
-        db_cols = ['iterations', 'mode', 'count']
-        data = self.get_table(
-            'realizedmodechoice', cols=db_cols,
-            condition="WHERE run_id = UUID_TO_BIN('{}')".format(simulation_id))
-
-        df = pd.DataFrame(data, columns=['iterations', 'mode', 'count'])
-        df = df.pivot_table(index='iterations', columns='mode', values='count') 
-        del df.columns.name
-        return df.reset_index()
-
-    def load_hourly_mode_choice(self, simulation_id):
-        db_cols = ['mode','hour','count']
-        data = self.get_table(
-            'hourlymodechoice', cols=db_cols,
-            condition="WHERE run_id = UUID_TO_BIN('{}')".format(simulation_id))
+    def load_hourly_mode_choice(self, simulation_ids):
+        if len(simulation_ids) > 1:
+            db_cols = ['mode','hour','FLOOR(AVG(count))']
+            data = self.get_table(
+                'hourlymodechoice', cols=db_cols,
+                condition="WHERE run_id IN ({}) GROUP BY mode, hour".format(
+                    self.binary_ids(simulation_ids))
+            )
+        else:
+            db_cols = ['mode','hour','count']
+            data = self.get_table(
+                'hourlymodechoice', cols=db_cols,
+                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                    simulation_ids[0]))
 
         df = pd.DataFrame(
             data, columns=['Modes', 'Hour', 'Count'])
@@ -292,11 +341,20 @@ class BistroDB(object):
 
         return df.T
 
-    def load_travel_times(self, simulation_id):
-        db_cols = ['mode','hour','averagetime']
-        data = self.get_table(
-            'traveltime', cols=db_cols,
-            condition="WHERE run_id = UUID_TO_BIN('{}')".format(simulation_id))
+    def load_travel_times(self, simulation_ids):
+        if len(simulation_ids) > 1:
+            db_cols = ['mode','hour','AVG(averagetime)']
+            data = self.get_table(
+                'traveltime', cols=db_cols,
+                condition="WHERE run_id IN ({}) GROUP BY mode, hour".format(
+                    self.binary_ids(simulation_ids))
+            )
+        else:
+            db_cols = ['mode','hour','averagetime']
+            data = self.get_table(
+                'traveltime', cols=db_cols,
+                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                    simulation_ids[0]))
 
         df = pd.DataFrame(data, columns=['TravelTimeMode\\Hour','Hour','Traveltime'])
         df = df.pivot_table(index='TravelTimeMode\\Hour', columns='Hour', values='Traveltime')

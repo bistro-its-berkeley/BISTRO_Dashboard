@@ -34,7 +34,7 @@ def calc_ridership_perc(row):
 
 class Submission():
 
-    def __init__(self, name, scenario, simulation_id=None):
+    def __init__(self, name, scenario, simulation_ids=None):
         """
         Initialize class object.
 
@@ -49,20 +49,22 @@ class Submission():
         """
         self.name = name
         self.scenario = scenario
-        self.simulation_id = simulation_id
+        self.simulation_ids = simulation_ids
 #        self.scenario = 'sioux_faux-15k'
 #        self.simulation_id = '5673feca-f45a-11e9-ba19-acde48001122'
         self.modes = ['ride_hail', 'car', 'drive_transit', 'walk', 'walk_transit']
         self.data_loaded = False
         self.data_source_made = False
 
-        if self.simulation_id is None:
+        if simulation_ids is None:
+            self.simulation_count = 1
             self.submissions_dir = join(
                 dirname(__file__),
                 'data/submissions/{}/{}'.format(self.scenario, self.name))
             self.reference_dir = join(
                 dirname(__file__), 'data/sioux_faux_bus_lines')
-
+        else:
+            self.simulation_count = len(simulation_ids)
         # self.get_data()
         # self.make_data_sources()
 
@@ -70,7 +72,7 @@ class Submission():
         if self.data_loaded:
             return
 
-        if self.simulation_id is None:
+        if self.simulation_ids is None:
             self.frequency_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/FrequencyAdjustment.csv'))
             self.fares_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/MassTransitFares.csv'))
             self.incentives_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/ModeIncentives.csv'))
@@ -106,25 +108,25 @@ class Submission():
             db = BistroDB(
                 db_name='bistro', user_name='bistroclt', db_key='client',
                 host='13.56.123.155')
-            self.frequency_df = db.load_frequency(self.simulation_id)
-            self.fares_df = db.load_fares(self.simulation_id)
-            self.incentives_df = db.load_incentives(self.simulation_id)
-            self.fleet_df = db.load_fleet(self.simulation_id)
-            self.scores_df = db.load_scores(self.simulation_id)
+            self.frequency_df = db.load_frequency(self.simulation_ids[0])
+            self.fares_df = db.load_fares(self.simulation_ids[0])
+            self.incentives_df = db.load_incentives(self.simulation_ids[0])
+            self.fleet_df = db.load_fleet(self.simulation_ids[0])
+            self.scores_df = db.load_scores(self.simulation_ids)
             self.activities_df = None
             self.households_df = None
-            self.legs_df = db.load_legs(self.simulation_id)
-            self.paths_df = db.load_paths(self.simulation_id, self.scenario)
+            self.legs_df = db.load_legs(self.simulation_ids)
+            self.paths_df = db.load_paths(self.simulation_ids, self.scenario)
             self.persons_df = db.load_person(self.scenario)
-            self.trips_df = db.load_trips(self.simulation_id)
-            self.mode_choice_df = db.load_mode_choice(self.simulation_id)
-            self.realized_mode_choice_df = db.load_realized_mode_choice(
-                self.simulation_id)
+            self.trips_df = db.load_trips(self.simulation_ids)
+            self.mode_choice_df = db.load_mode_choice(self.simulation_ids)
+            self.realized_mode_choice_df = db.load_mode_choice(
+                self.simulation_ids, realized=True)
 
             self.mode_choice_hourly_df = db.load_hourly_mode_choice(
-                self.simulation_id)
+                self.simulation_ids)
 
-            self.travel_times_df = db.load_travel_times(self.simulation_id)
+            self.travel_times_df = db.load_travel_times(self.simulation_ids)
             vehicle_type = db.load_vehicle_types(self.scenario)
 
             self.seating_capacities = vehicle_type[
@@ -474,6 +476,8 @@ class Submission():
             by=['realizedTripMode', 'income_group']).agg('count').reset_index()
         # ymax = grouped['PID'].max() * 1.1
 
+        grouped.loc[:, 'PID'] = grouped['PID'] // self.simulation_count
+
         grouped = grouped.pivot(
             index='realizedTripMode', 
             columns='income_group', 
@@ -498,6 +502,8 @@ class Submission():
         grouped = people_age_mode.groupby(
             by=['realizedTripMode', 'age_group']).agg('count').reset_index()
         # ymax = grouped['PID'].max() * 1.1
+
+        grouped.loc[:, 'PID'] = grouped['PID'] // self.simulation_count
 
         grouped = grouped.pivot(
             index='realizedTripMode', 
@@ -531,6 +537,8 @@ class Submission():
                                     'Trip Distance (miles)',
                                     'num_trips']]
         # max_trips = for_plot.groupby('Trip Distance (miles)')['num_trips'].sum().max() * 1.1
+
+        for_plot.loc[:, 'num_trips'] = for_plot['num_trips'] // self.simulation_count
 
         for_plot = for_plot.rename(columns={'realizedTripMode': 'Trip Mode'})
         for_plot = for_plot.pivot(
@@ -583,19 +591,18 @@ class Submission():
         return data
 
     def make_congestion_miles_traveled_per_mode_data(self):
-
         # get_vmt_dataframe:
         vmt_walk = round(
             self.paths_df[self.paths_df["mode"] == "walk"]["length"].apply(
-                lambda x: x * 0.000621371).sum(), 0)
+                lambda x: x * 0.000621371).sum(), 0) / self.simulation_count
         vmt_bus = round(
             self.paths_df[self.paths_df["mode"] == "bus"]["length"].apply(
-                lambda x: x * 0.000621371).sum(), 0)
+                lambda x: x * 0.000621371).sum(), 0) / self.simulation_count
         vmt_on_demand = round(
-            self.paths_df[self.paths_df["vehicle"].str.contains("rideHailVehicle")]["length"].apply(lambda x: x * 0.000621371).sum(), 0)
+            self.paths_df[self.paths_df["vehicle"].str.contains("rideHailVehicle")]["length"].apply(lambda x: x * 0.000621371).sum(), 0) / self.simulation_count
         vmt_car = round(
             self.legs_df[self.legs_df["Mode"] == "car"]["Distance_m"].apply(
-                lambda x: x * 0.000621371).sum(), 0)
+                lambda x: x * 0.000621371).sum(), 0) / self.simulation_count
         vmt = pd.DataFrame(
             {"bus": [vmt_bus], "car": [vmt_car], "ride_hail": [vmt_on_demand],
              "walk" : [vmt_walk]})
@@ -662,8 +669,13 @@ class Submission():
                     df.loc[0, "Hour"] = hour
                     vmt_bus_ridership = vmt_bus_ridership.append(
                         df, ignore_index=True, sort=False)
+
         vmt_bus_ridership = vmt_bus_ridership.groupby(
-            ['Hour', 'ridership'])['length'].sum().reset_index().pivot(
+            ['Hour', 'ridership'])['length'].sum().reset_index()
+
+        vmt_bus_ridership.loc[:, 'length'] = vmt_bus_ridership['length'] / self.simulation_count
+
+        vmt_bus_ridership = vmt_bus_ridership.pivot(
             index='Hour',
             columns='ridership', 
             values='length')
@@ -694,6 +706,9 @@ class Submission():
             by=["Hour", "drivingState"])['length'].sum().reset_index()
         vmt_on_demand.replace(np.nan, 0, inplace=True)
         vmt_on_demand.loc[:, "Hour"] = vmt_on_demand["Hour"].astype("int")
+
+        vmt_on_demand.loc[:,'length'] = vmt_on_demand.loc[:,'length'] / self.simulation_count
+
         vmt_on_demand = vmt_on_demand.pivot(
             index='Hour', 
             columns='drivingState',
@@ -800,6 +815,10 @@ class Submission():
             ["route_id", "servicePeriod"]
         )["serviceTime"].sum().fillna(0).reset_index()
         # max_crowding = grouped_data['serviceTime'].max() * 1.1
+
+        if self.simulation_ids is not None:
+            simulation_count = len(self.simulation_ids)
+            grouped_data.loc[:, 'serviceTime'] = grouped_data['serviceTime'] // simulation_count
 
         grouped_data = reset_index(grouped_data.pivot(
             index='route_id', 
@@ -916,13 +935,13 @@ class Submission():
         # emissions for each mode
         emissions_bus = round(
             vmt[vmt["mode"] == "bus"]["length"].apply(
-                lambda x: x * 0.000621371 * 0.0025936648).sum(), 0)
+                lambda x: x * 0.000621371 * 0.0025936648).sum(), 0) / self.simulation_count
         emissions_on_demand = round(
             vmt[vmt["vehicle"].str.contains("rideHailVehicle")]["length"].apply(
-                lambda x: x * 0.000621371 * 0.001716086).sum(), 0)
+                lambda x: x * 0.000621371 * 0.001716086).sum(), 0) / self.simulation_count
         emissions_car = round(
             self.legs_df[self.legs_df["Mode"] == "car"]["Distance_m"].apply(
-                lambda x: x * 0.000621371 * 0.001716086).sum(), 0)
+                lambda x: x * 0.000621371 * 0.001716086).sum(), 0) / self.simulation_count
 
         emissions = pd.DataFrame(
             {"bus": [emissions_bus], "car": [emissions_car],

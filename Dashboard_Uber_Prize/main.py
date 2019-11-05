@@ -2,6 +2,7 @@ import pdb
 
 import glob
 import math
+from collections import defaultdict
 from os import listdir, makedirs
 from os.path import dirname, isdir, join
 import pandas as pd
@@ -934,24 +935,44 @@ simulations = bistro_db.load_simulation_df()
 
 submissions = []
 submission_dict = {}
+submission_summary = {}
 for _, simulation in simulations.iterrows():
     simulation_id, datetime, scenario, name = (
         simulation['simulation_id'], str(simulation['datetime']),
         simulation['scenario'], simulation['name'])
-    submissions += [scenario+'/'+name+'@'+datetime]
+    submissions.append(scenario+'/'+name+'@'+datetime)
     submission_name = name+'@'+datetime
+    submission = Submission(
+        name=submission_name, scenario=scenario, simulation_ids=[simulation_id])
+
+    summary_name = name+'_average'
+    if summary_name not in submission_summary:
+        submission_summary[summary_name] = {
+            'scenario': scenario,
+            'simulation_ids': [simulation_id]
+        }
+    else:
+        submission_summary[summary_name]['simulation_ids'].append(simulation_id)
+
     if scenario not in submission_dict:
         submission_dict[scenario] = {
-            'submissions': {
-            submission_name: Submission(
-                name=submission_name, scenario=scenario, simulation_id=simulation_id)
-            },
+            'submissions': {submission_name: submission},
             'categories': yaml.safe_load(
                 open(join(dirname(__file__), 'kpis.yaml')))
         }
     else:
-        submission_dict[scenario]['submissions'][submission_name] = Submission(
-            name=datetime, scenario=scenario, simulation_id=simulation_id)
+        submission_dict[scenario]['submissions'][submission_name] = submission
+
+for summary_name in submission_summary.keys():
+    scenario=submission_summary[summary_name]['scenario']
+    submission = Submission(
+        name=summary_name,
+        scenario=scenario,
+        simulation_ids=submission_summary[summary_name]['simulation_ids']
+    )
+    submissions.append(scenario+'/'+summary_name)
+    submission_dict[scenario]['submissions'][summary_name] = submission
+
 # for scenario_submission in submissions:
 #     scenario, submission = scenario_submission.split('/')
 #     if scenario not in submission_dict:
