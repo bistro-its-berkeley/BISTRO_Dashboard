@@ -533,12 +533,13 @@ class Submission():
         mode_df_grouped = mode_df_grouped.rename(
             index=str, columns={'Trip_ID': 'num_trips'})
 
+        mode_df_grouped.loc[:, 'num_trips'] = (
+            mode_df_grouped['num_trips'] // self.simulation_count)
+
         for_plot = mode_df_grouped[['realizedTripMode',
                                     'Trip Distance (miles)',
                                     'num_trips']]
         # max_trips = for_plot.groupby('Trip Distance (miles)')['num_trips'].sum().max() * 1.1
-
-        for_plot.loc[:, 'num_trips'] = for_plot['num_trips'] // self.simulation_count
 
         for_plot = for_plot.rename(columns={'realizedTripMode': 'Trip Mode'})
         for_plot = for_plot.pivot(
@@ -561,11 +562,12 @@ class Submission():
 
         # max_time = travel_time.max(axis=1)[0] * 1.1
 
-        palette = Dark2[len(self.modes)]
+        modes = travel_time.columns.values.tolist()
+        palette = Dark2[len(modes)]
 
         data=dict( 
-            x=self.modes,
-            y=[travel_time[mode] for mode in self.modes],
+            x=modes,
+            y=[travel_time[mode] for mode in modes],
             color=palette,
         )
         return data
