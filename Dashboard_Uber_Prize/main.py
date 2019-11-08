@@ -963,15 +963,15 @@ for _, simulation in simulations.iterrows():
     else:
         submission_dict[scenario]['submissions'][submission_name] = submission
 
-for summary_name in submission_summary.keys():
-    scenario=submission_summary[summary_name]['scenario']
-    submission = Submission(
-        name=summary_name,
-        scenario=scenario,
-        simulation_ids=submission_summary[summary_name]['simulation_ids']
-    )
-    submissions.append(scenario+'/'+summary_name)
-    submission_dict[scenario]['submissions'][summary_name] = submission
+# for summary_name in submission_summary.keys():
+#     scenario=submission_summary[summary_name]['scenario']
+#     submission = Submission(
+#         name=summary_name,
+#         scenario=scenario,
+#         simulation_ids=submission_summary[summary_name]['simulation_ids']
+#     )
+#     submissions.append(scenario+'/'+summary_name)
+#     submission_dict[scenario]['submissions'][summary_name] = submission
 
 # for scenario_submission in submissions:
 #     scenario, submission = scenario_submission.split('/')

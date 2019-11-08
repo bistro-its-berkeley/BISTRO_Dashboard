@@ -561,6 +561,9 @@ class Submission():
         # del travel_time['others']
 
         # max_time = travel_time.max(axis=1)[0] * 1.1
+        for mode in self.modes:
+            if mode not in travel_time.columns:
+                travel_time[mode] = 0
 
         modes = travel_time.columns.values.tolist()
         palette = Dark2[len(modes)]
@@ -576,6 +579,10 @@ class Submission():
 
         travel_time = self.travel_times_df.set_index(
             "TravelTimeMode\Hour").T.reset_index()
+
+        for mode in self.modes:
+            if mode not in travel_time.columns:
+                travel_time[mode] = 0
         
         #travel_time.rename(columns={"ride_hail": "OnDemand_ride"}, inplace=True)
         # del travel_time['others']
