@@ -95,6 +95,7 @@ class BistroDB(object):
             SELECT BIN_TO_UUID(`run_id`), `datetime`, `scenario`, `name`
             FROM simulationrun
             WHERE scenario = 'sioux_faux-15k'
+            AND name NOT IN ('Pareto-CONGESTION-TOLLS', 'Pareto-SOCIAL-TOLLS', 'Pareto-SOCIAL-CONGESTION')
             """)
         return pd.DataFrame(
             data, columns=['simulation_id','datetime','scenario', 'name'])
