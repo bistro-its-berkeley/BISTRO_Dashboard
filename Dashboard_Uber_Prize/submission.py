@@ -440,6 +440,10 @@ class Submission():
             hours = HOURS
             max_hour = 23
 
+        for mode in self.modes:
+            if mode not in mode_choice_by_hour.columns:
+                mode_choice_by_hour[mode] = 0
+
         # Completing the dataframe with the missing ridership bins (so that they appear in the plot)
         df = pd.DataFrame([0, 0.0, 0.0, 0.0, 0.0, 0.0]).T
         df.columns = ["hours"] + self.modes
@@ -544,8 +548,11 @@ class Submission():
         for_plot = for_plot.rename(columns={'realizedTripMode': 'Trip Mode'})
         for_plot = for_plot.pivot(
             index='Trip Distance (miles)', columns='Trip Mode',
-            values='num_trips').reset_index()
-        
+            values='num_trips').fillna(0.0).reset_index()
+
+        for mode in self.modes:
+            if mode not in for_plot.columns:
+                for_plot[mode] = 0.0
         # colors = Dark2[len(self.modes)]
 
         data = for_plot.to_dict(orient='list')
@@ -706,10 +713,9 @@ class Submission():
                                               labels=HOURS,
                                               right=False)
         driving_states = ["fetch", "fare"]
-        vmt_on_demand.loc[:, "drivingState"] = pd.cut(vmt_on_demand["numPassengers"], 
-                                                      bins=[0, 1, 2], 
-                                                      labels=driving_states,
-                                                      right=False)
+        vmt_on_demand.loc[:, "drivingState"] = pd.cut(
+            vmt_on_demand["numPassengers"], bins=[0, 1, 2],
+            labels=driving_states, right=False)
 
         vmt_on_demand = vmt_on_demand.groupby(
             by=["Hour", "drivingState"])['length'].sum().reset_index()
@@ -722,11 +728,20 @@ class Submission():
             index='Hour', 
             columns='drivingState',
             values='length')
+        vmt_on_demand = vmt_on_demand.reset_index()
+
+        for h in HOURS:
+            if int(h) not in vmt_on_demand.index:
+                df = pd.DataFrame([int(h), 0.0, 0.0]).T
+                df.columns = ['Hour','fare','fetch']
+                vmt_on_demand = vmt_on_demand.append(
+                    df, ignore_index=True, sort=False)
+
         # ymax = vmt_on_demand.sum(axis=1).max()*1.1
 
         # colors = Dark2[3][:len(driving_states)]
 
-        data = vmt_on_demand.reset_index().to_dict(orient='list')
+        data = vmt_on_demand.sort_values('Hour').to_dict(orient='list')
         return data 
 
     def make_congestion_travel_speed_data(self):
@@ -757,6 +772,11 @@ class Submission():
             index='Start time interval (hour)', 
             columns='realizedTripMode', 
             values='Average Speed (miles/hour)')
+
+        for mode in self.modes:
+            if mode not in grouped.columns:
+                grouped[mode] = 0.0
+
         grouped = grouped.reset_index().rename(
             columns={'index':'Start time interval (hour)'})
 
@@ -793,6 +813,11 @@ class Submission():
             index='hour_of_day', 
             columns='realizedTripMode', 
             values='trip_cost')
+
+        for mode in self.modes:
+            if mode not in grouped.columns:
+                grouped[mode] = 0.0
+
         grouped = grouped.reset_index().rename(columns={'index':'hour_of_day'})
 
         data = grouped.to_dict(orient='list')
@@ -931,6 +956,11 @@ class Submission():
             index='hour_of_day', 
             columns='realizedTripMode', 
             values='Incentives distributed')
+
+        for mode in self.modes:
+            if mode not in grouped.columns:
+                grouped[mode] = 0.0
+
         grouped = grouped.reset_index().rename(columns={'index':'hour_of_day'})
 
         data = grouped.to_dict(orient='list')

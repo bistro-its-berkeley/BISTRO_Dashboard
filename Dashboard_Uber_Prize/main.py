@@ -287,7 +287,8 @@ def plot_mode_pie_chart(source, choice_type='planned', sub_key=1, savefig='None'
 
 def plot_mode_choice_by_time(source, sub_key=1, savefig='None'):
 
-    p = figure(x_range=HOURS, y_range=(0, 14000), 
+
+    p = figure(x_range=HOURS,# y_range=(0, 8000), 
                plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
@@ -1207,11 +1208,11 @@ outputs_sustainability_tab = Panel(child=outputs_sustainability,title="Outputs -
 
 tabs=[
     inputs_tab, 
-    scores_tab, 
-    outputs_mode_tab, 
-    outputs_los_tab, 
-    outputs_congestion_tab, 
-    outputs_transitcb_tab, 
+    scores_tab,
+    outputs_mode_tab,
+    outputs_los_tab,
+    outputs_congestion_tab,
+    outputs_transitcb_tab,
     outputs_sustainability_tab
 ]
 tabs = Tabs(tabs=tabs, width=1200)
