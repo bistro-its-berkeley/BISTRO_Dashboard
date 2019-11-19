@@ -789,7 +789,8 @@ class Submission():
         trips.loc[:, 'trip_cost'] = np.zeros(trips.shape[0])
 
         trips.loc[trips['realizedTripMode'] == 'car', 'trip_cost'] = \
-            trips[trips['realizedTripMode'] == 'car']['FuelCost'].values
+            trips[trips['realizedTripMode'] == 'car']['FuelCost'].values + \
+            trips[trips['realizedTripMode'] == 'car']['Toll'].values
 
         fare_modes = ['walk_transit', 'drive_transit', 'ride_hail']
         trips.loc[trips['realizedTripMode'].isin(fare_modes), 'trip_cost'] = \
@@ -798,7 +799,8 @@ class Submission():
 
         trips.loc[trips['realizedTripMode'] == 'drive_transit', 'trip_cost'] = \
             trips[trips['realizedTripMode'] == 'drive_transit']['trip_cost'].values + \
-            trips[trips['realizedTripMode'] == 'drive_transit']['FuelCost'].values
+            trips[trips['realizedTripMode'] == 'drive_transit']['FuelCost'].values + \
+            trips[trips['realizedTripMode'] == 'drive_transit']['Toll'].values
 
         trips.loc[trips['trip_cost'] < 0,:] = 0
         trips.loc[:, "hour_of_day"] = np.floor(trips.Start_time/3600)
@@ -929,16 +931,23 @@ class Submission():
 
     def make_transit_inc_by_mode_data(self):
         
-        columns = ['FuelCost', 'Fare', 'Start_time', 'realizedTripMode', 'Incentive']
+        columns = ['FuelCost', 'Fare', 'Start_time', 'realizedTripMode', 'Incentive', 'Toll']
         trips = self.trips_df.copy()[columns]
 
         trips.loc[:, 'trip_cost'] = np.zeros(trips.shape[0])
         trips.loc[:, 'ride_expenditure'] = trips['Fare'] - trips['Incentive']
         ride_modes = set(['walk_transit', 'drive_transit', 'ride_hail'])
 
-        trips.loc[trips['realizedTripMode'] == 'car', 'trip_cost'] = trips[trips['realizedTripMode'] == 'car']['FuelCost'].values
-        trips.loc[trips['realizedTripMode'].isin(ride_modes), 'trip_cost'] = trips[trips['realizedTripMode'].isin(ride_modes)]['ride_expenditure'].values
-        trips.loc[trips['realizedTripMode'] == 'drive_transit', 'trip_cost'] += trips[trips['realizedTripMode'] == 'drive_transit']['FuelCost'].values
+        trips.loc[trips['realizedTripMode'] == 'car', 'trip_cost'] = \
+            trips[trips['realizedTripMode'] == 'car']['FuelCost'].values + \
+            trips[trips['realizedTripMode'] == 'car']['Toll'].values
+
+        trips.loc[trips['realizedTripMode'].isin(ride_modes), 'trip_cost'] = \
+            trips[trips['realizedTripMode'].isin(ride_modes)]['ride_expenditure'].values
+
+        trips.loc[trips['realizedTripMode'] == 'drive_transit', 'trip_cost'] += \
+            trips[trips['realizedTripMode'] == 'drive_transit']['FuelCost'].values + \
+            trips[trips['realizedTripMode'] == 'drive_transit']['Toll'].values
 
         trips.loc[:, 'Incentives distributed'] = trips['Incentive'].values
         trips.loc[trips['trip_cost'] < 0, 'Incentives distributed'] -= trips[trips['trip_cost'] < 0]['trip_cost'].values
