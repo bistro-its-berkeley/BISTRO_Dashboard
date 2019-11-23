@@ -95,7 +95,6 @@ class BistroDB(object):
             SELECT BIN_TO_UUID(`run_id`), `datetime`, `scenario`, `name`
             FROM simulationrun
             WHERE scenario = 'sioux_faux-15k'
-            AND (name LIKE 'pareto_permile%' OR name LIKE 'Sioux-Faux-BAU%')
             """)
         return pd.DataFrame(
             data, columns=['simulation_id','datetime','scenario', 'name'])
