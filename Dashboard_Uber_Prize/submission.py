@@ -193,6 +193,7 @@ class Submission():
         self.transit_cb_costs_data, self.transit_cb_benefits_data = \
             self.make_transit_cb_data()
         self.transit_inc_by_mode_data = self.make_transit_inc_by_mode_data()
+        self.toll_revenue_by_time_data = self.make_toll_revenue_by_time_data()
         
         self.sustainability_25pm_per_mode_data = \
             self.make_sustainability_25pm_per_mode_data()
@@ -974,6 +975,24 @@ class Submission():
 
         data = grouped.to_dict(orient='list')
         return data 
+
+    def make_toll_revenue_by_time_data(self):
+        columns = ["Start_time", "Toll"]
+        legs = self.legs_df.copy()[columns]
+
+        hours = range(25)
+        seconds = [hour*3600 for hour in hours]
+
+        legs['Hour'] = pd.cut(
+            legs['Start_time'],
+            bins=seconds,
+            labels=[str(h) for h in hours[:-1]]
+        )
+
+        legs = legs[['Toll','Hour']].groupby('Hour').sum()
+        legs = legs.reset_index()
+
+        return legs.to_dict(orient='list')
 
     def make_sustainability_25pm_per_mode_data(self):
         

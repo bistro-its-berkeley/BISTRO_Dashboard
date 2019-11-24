@@ -58,6 +58,7 @@ SOURCE_NAME_DATA_PAIR = [
 ('transit_cb_costs_source', 'transit_cb_costs_data'),
 ('transit_cb_benefits_source', 'transit_cb_benefits_data'),
 ('transit_inc_by_mode_source', 'transit_inc_by_mode_data'),
+('toll_revenue_by_time_source','toll_revenue_by_time_data'),
 ('sustainability_25pm_per_mode_source', 'sustainability_25pm_per_mode_data')
 ]
 
@@ -827,6 +828,26 @@ def plot_transit_inc_by_mode(source, sub_key=1, savefig='None'):
 
     return p
 
+
+def plot_toll_revenue_by_time(source, sub_key=1, savefig='None'):
+    p = figure(x_range=HOURS, plot_height=350, toolbar_location=None, tools="")
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text="Toll Revenue per hour", text_font_size="14pt"), 'above')
+
+    p.vbar(x='Hour', top='Toll', source=source, width=0.85)
+
+    p.xaxis.axis_label = 'Hour'
+    p.yaxis.axis_label = 'Toll Revenue [$]'
+    p.xaxis.major_label_orientation = math.pi / 6
+
+    if savefig == 'svg':
+      p.output_backend = "svg"
+      export_svgs(p, filename="figures/{}/outputs/toll_revenue_by_time.svg".format(sub_key))
+    elif savefig == 'png':
+      export_png(p, filename="figures/{}/outputs/toll_revenue_by_time.png".format(sub_key))
+
+    return p
+
 def plot_sustainability_25pm_per_mode(source, sub_key=1, savefig='None'):
  
     modes = ['ride_hail', 'car', 'bus']
@@ -921,7 +942,7 @@ def update_submission(submission_sources, sub_order):
 
     return update_sub_order
 
-title_div = Div(text="<img src='Dashboard_Uber_Prize/static/uber.svg' height='18'><b>Prize Visualization Dashboard</b>", width=800, height=10, style={'font-size': '200%'})
+title_div = Div(text="""<link href="https://fonts.googleapis.com/css?family=Kaushan+Script" rel="stylesheet" type="text/css"><font style='color:#fdb515ff; font-family:"Kaushan Script"'>BISTRO</font><b> Visualization Dashboard</b>""", width=800, height=10, style={'font-size': '200%'})
 
 ### Instantiate all submission objects and generate data sources ###
 # try:
@@ -1103,6 +1124,8 @@ for sub_order, sub_key in \
         route_ids=submission.route_ids)
     plots[sub_order]['transit_inc_by_mode_plot'] = plot_transit_inc_by_mode(
         source=sources['transit_inc_by_mode_source'], sub_key=sub_key)
+    plots[sub_order]['toll_revenue_by_time_plot'] = plot_toll_revenue_by_time(
+        source=sources['toll_revenue_by_time_source'], sub_key=sub_key)
     plots[sub_order]['sustainability_25pm_per_mode_plot'] = \
         plot_sustainability_25pm_per_mode(
             source=sources['sustainability_25pm_per_mode_source'],
@@ -1140,7 +1163,8 @@ submission_outputs_los_plots = [
 ]
 submission_outputs_transitcb_plots = [
     'transit_cb_plot',
-    'transit_inc_by_mode_plot'
+    'transit_inc_by_mode_plot',
+    'toll_revenue_by_time_plot'
 ]
 submission_outputs_sustainability_plots = ['sustainability_25pm_per_mode_plot']
 
@@ -1218,4 +1242,4 @@ tabs=[
 tabs = Tabs(tabs=tabs, width=1200)
 
 curdoc().add_root(column([title_div, pulldowns, tabs]))
-curdoc().title = "UberPrize Dashboard"
+curdoc().title = "Bistro Dashboard"

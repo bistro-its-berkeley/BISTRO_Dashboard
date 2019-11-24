@@ -198,7 +198,7 @@ class BistroDB(object):
         pass
 
     def load_legs(self, simulation_ids):
-        db_cols = ['distance','leg_mode','vehicle','fare','fuel_cost']
+        db_cols = ['distance','leg_mode','vehicle','leg_start','fare','fuel_cost','toll']
 
         if len(simulation_ids) > 1:
             data = self.get_table(
@@ -214,7 +214,7 @@ class BistroDB(object):
 
         df = pd.DataFrame(
             data,
-            columns=['Distance_m','Mode','Veh','Fare','FuelCost'])
+            columns=['Distance_m','Mode','Veh','Start_time','Fare','FuelCost','Toll'])
         return df
 
     def load_vehicles(self, scenario):
