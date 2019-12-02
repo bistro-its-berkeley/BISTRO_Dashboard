@@ -1163,7 +1163,9 @@ submission_outputs_los_plots = [
 ]
 submission_outputs_transitcb_plots = [
     'transit_cb_plot',
-    'transit_inc_by_mode_plot',
+    'transit_inc_by_mode_plot'
+]
+submission_outputs_toll_plots = [
     'toll_revenue_by_time_plot'
 ]
 submission_outputs_sustainability_plots = ['sustainability_25pm_per_mode_plot']
@@ -1193,6 +1195,9 @@ outputs_congestion_plots = row(
 outputs_transitcb_plots = row(
     *[column([plots[sub_order][p] for p in submission_outputs_transitcb_plots])
     for sub_order in sub_orders])
+outputs_toll_plots = row(
+    *[column([plots[sub_order][p] for p in submission_outputs_toll_plots])
+    for sub_order in sub_orders])
 outputs_sustainability_plots = row(
     *[column([plots[sub_order][p] for p in submission_outputs_sustainability_plots])
     for sub_order in sub_orders])
@@ -1220,6 +1225,7 @@ outputs_mode = layout([outputs_mode_plots], sizing_mode='fixed')
 outputs_los = layout([outputs_los_plots], sizing_mode='fixed')
 outputs_congestion = layout([outputs_congestion_plots], sizing_mode='fixed')
 outputs_transitcb = layout([outputs_transitcb_plots], sizing_mode='fixed')
+outputs_toll = layout([outputs_toll_plots], sizing_mode='fixed')
 outputs_sustainability = layout([outputs_sustainability_plots], sizing_mode='fixed')
 
 inputs_tab = Panel(child=inputs,title="Inputs")
@@ -1228,6 +1234,7 @@ outputs_mode_tab = Panel(child=outputs_mode,title="Outputs - Mode Choice")
 outputs_los_tab = Panel(child=outputs_los,title="Outputs - Level of Service")
 outputs_congestion_tab = Panel(child=outputs_congestion,title="Outputs - Congestion")
 outputs_transitcb_tab = Panel(child=outputs_transitcb,title="Outputs - Cost/Benefit")
+outputs_toll_tab = Panel(child=outputs_toll,title='Outputs - Toll Revenue')
 outputs_sustainability_tab = Panel(child=outputs_sustainability,title="Outputs - Sustainability")
 
 tabs=[
@@ -1237,6 +1244,7 @@ tabs=[
     outputs_los_tab,
     outputs_congestion_tab,
     outputs_transitcb_tab,
+    outputs_toll_tab,
     outputs_sustainability_tab
 ]
 tabs = Tabs(tabs=tabs, width=1200)
