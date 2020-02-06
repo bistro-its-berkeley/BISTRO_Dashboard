@@ -11,12 +11,17 @@ import yaml
 from bokeh.core.properties import value
 from bokeh.io import curdoc, show, output_file, export_png, export_svgs
 from bokeh.layouts import row, column, gridplot, layout, widgetbox
-from bokeh.models import BasicTicker, ColorBar, ColumnDataSource, DataRange1d, LabelSet, Legend, LinearColorMapper, Select, Title
+from bokeh.models import (
+    BasicTicker, ColorBar, ColumnDataSource, DataRange1d, Label, LabelSet,
+    Legend, LinearColorMapper, Select, Title)
+from bokeh.models.markers import Circle
 from bokeh.models.formatters import NumeralTickFormatter
+from bokeh.models.glyphs import Segment, Text
 from bokeh.models.widgets import CheckboxButtonGroup, Div, Panel, Tabs
 from bokeh.palettes import Dark2, Category10, Category20, Plasma256, YlOrRd
 from bokeh.plotting import figure, show
 from bokeh.transform import dodge, transform
+from bokeh.tile_providers import CARTODBPOSITRON
 
 from submission import Submission
 from db_loader import BistroDB
@@ -36,6 +41,8 @@ SOURCE_NAME_DATA_PAIR = [
 ('routesched_input_end_source', 'routesched_input_end_data'),
 ('fares_input_source', 'fares_input_data'),
 ('modeinc_input_source', 'modeinc_input_data'),
+('link_source','link_data'),
+('tollcircle_source','tollcircle_data'),
 ('mode_planned_pie_chart_source', 'mode_planned_pie_chart_data'),
 ('mode_realized_pie_chart_source', 'mode_realized_pie_chart_data'),
 ('mode_choice_by_time_source', 'mode_choice_by_time_data'),
@@ -249,6 +256,38 @@ def plot_modeinc_input(source, max_incentive=50, max_age=121, max_income=150000,
       export_png(row(p, color_bar_plot), filename="figures/{}/inputs/modeinc_input.png".format(sub_key))
 
     return row(p, color_bar_plot)
+
+def plot_tollcircle(link_source, circle_source, sub_key=1, savefig='None'):
+    title = 'Toll Circle'
+    d = circle_source.data
+
+    p = figure(
+        x_range=(d['x_low'][0], d['x_high'][0]),
+        y_range=(d['y_low'][0], d['y_high'][0]),
+        x_axis_type="mercator",
+        y_axis_type="mercator")
+    p.add_tile(CARTODBPOSITRON)
+    p.add_layout(Title(text="Toll Circle", text_font_size="14pt"), 'above')
+
+    seg = Segment(x0="from_x", y0="from_y", x1="to_x", y1="to_y",
+                    line_color="#f4a582", line_width=1)
+    p.add_glyph(link_source, seg)
+
+    circle = Circle(
+        x='center_x', y='center_y', radius='radius', line_color="#00BFFF",
+        fill_color="#00BFFF", fill_alpha=0.05)
+    p.add_glyph(circle_source, circle)
+    label = Text(x='center_x', y='center_y', text='text')
+    p.add_glyph(circle_source, label)
+
+
+    if savefig == 'svg':
+      p.output_backend = "svg"
+      export_svgs(p, filename="figures/{}/inputs/toll_circle.svg".format(sub_key))
+    elif savefig == 'png':
+      export_png(p, filename="figures/{}/inputs/toll_circle.png".format(sub_key))
+
+    return p
 
 def plot_mode_pie_chart(source, choice_type='planned', sub_key=1, savefig='None'):
 
@@ -1068,6 +1107,9 @@ for sub_order, sub_key in \
         route_ids=submission.route_ids)
     plots[sub_order]['modeinc_input_plot'] = plot_modeinc_input(
         source=sources['modeinc_input_source'], sub_key=sub_key)
+    plots[sub_order]['tollcircle_plot'] = plot_tollcircle(
+        link_source=sources['link_source'],
+        circle_source=sources['tollcircle_source'],  sub_key=sub_key)
     plots[sub_order]['mode_planned_pie_chart_plot'] = plot_mode_pie_chart(
         source=sources['mode_planned_pie_chart_source'],
         choice_type='planned', sub_key=sub_key)
@@ -1166,7 +1208,8 @@ submission_outputs_transitcb_plots = [
     'transit_inc_by_mode_plot'
 ]
 submission_outputs_toll_plots = [
-    'toll_revenue_by_time_plot'
+    'toll_revenue_by_time_plot',
+    'tollcircle_plot'
 ]
 submission_outputs_sustainability_plots = ['sustainability_25pm_per_mode_plot']
 

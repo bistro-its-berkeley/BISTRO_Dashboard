@@ -26,13 +26,35 @@ def reset_index(df):
     # pd.merge(df, index_df, left_index=True, right_index=True) does not work
     return pd.merge(index_df, df, left_index=True, right_index=True)
 
+
 def calc_ridership_perc(row):
     if row['numPassengers'] > row['seatingCapacity']:
         return 100.0 + (row['numPassengers'] - row['seatingCapacity']) * 100.0 / row['standingRoomCapacity']
     else:
         return row['numPassengers'] * 100.0 / row['seatingCapacity']
 
+
+def merc(lat, lon):
+    # https://gis.stackexchange.com/questions/156035/calculating-mercator-coordinates-from-lat-lon
+    r_major = 6378137.000
+    x = r_major * math.radians(lon)
+    scale = x/lon
+    y = (180.0/math.pi * math.log(math.tan(math.pi/4.0 +
+        lat * (math.pi/180.0)/2.0)) * scale)
+    return (x, y)
+
+
 class Submission():
+
+    links = dict()
+
+    @classmethod
+    def load_links(cls, db, scenario):
+        if scenario in cls.links:
+            return cls.links[scenario]
+        else:
+            cls.links[scenario] = db.load_links(scenario)
+            return cls.links[scenario]
 
     def __init__(self, name, scenario, simulation_ids=None):
         """
@@ -73,11 +95,12 @@ class Submission():
             return
 
         if self.simulation_ids is None:
+            self.links_df = pd.read_csv(join(self.submissions_dir, 'network.csv'))
             self.frequency_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/FrequencyAdjustment.csv'))
             self.fares_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/MassTransitFares.csv'))
             self.incentives_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/ModeIncentives.csv'))
             self.fleet_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/VehicleFleetMix.csv'))
-
+            self.tollcircle_df = None
             self.scores_df = pd.read_csv(join(self.submissions_dir, 'competition/submissionScores.csv'))
 
             self.activities_df = pd.read_csv(join(self.submissions_dir, 'activities_dataframe.csv'))
@@ -108,6 +131,7 @@ class Submission():
             db = BistroDB(
                 db_name='bistro', user_name='bistroclt', db_key='client',
                 host='13.56.123.155')
+            self.links_df = self.load_links(db, self.scenario)
             self.frequency_df = db.load_frequency(self.simulation_ids[0])
             self.fares_df = db.load_fares(self.simulation_ids[0])
             self.incentives_df = db.load_incentives(self.simulation_ids[0])
@@ -122,7 +146,7 @@ class Submission():
             self.mode_choice_df = db.load_mode_choice(self.simulation_ids)
             self.realized_mode_choice_df = db.load_mode_choice(
                 self.simulation_ids, realized=True)
-
+            self.tollcircle_df = db.load_tollcircle(self.simulation_ids[0])
             self.mode_choice_hourly_df = db.load_hourly_mode_choice(
                 self.simulation_ids)
 
@@ -158,7 +182,8 @@ class Submission():
         self.fares_input_data = self.make_fares_input_data()
         (self.routesched_input_line_data, self.routesched_input_start_data,
          self.routesched_input_end_data) = self.make_routesched_input_data()
-
+        self.link_data = self.make_link_data()
+        self.tollcircle_data = self.make_tollcircle_data()
         self.normalized_scores_data = self.make_normalized_scores_data()
 
         self.mode_planned_pie_chart_data = self.make_mode_pie_chart_data(
@@ -363,6 +388,60 @@ class Submission():
         fares = fares.sort_values(by=["amount", "routeId"])
         data = fares.to_dict(orient='list')
         return data 
+
+    def make_link_data(self):
+        links = self.links_df.copy()
+        from_x = []
+        from_y = []
+        to_x = []
+        to_y = []
+        for _, row in links.iterrows():
+            x0, y0 = merc(row['fromLocationX'],row['fromLocationY'])
+            x1, y1 = merc(row['toLocationX'],row['toLocationY'])
+            from_x.append(x0)
+            from_y.append(y0)
+            to_x.append(x1)
+            to_y.append(y1)
+
+        links['from_x'], links['from_y']  = from_x, from_y
+        links['to_x'], links['to_y'] = to_x, to_y
+
+        data = links[['from_x','from_y','to_x','to_y']].to_dict(orient='list')
+        return data
+
+    def make_tollcircle_data(self):
+        if 'sioux_faux' in self.scenario:
+            x_lim = [-10776977, -10759011]
+            y_lim = [5388501, 5406742]
+        else:
+            x_lim = [0, 0]
+            y_lim = [0, 0]
+
+        data = {}
+        data['x_low'], data['x_high'] = x_lim
+        data['y_low'], data['y_high'] = y_lim
+        data['center_x'] = 0
+        data['center_y'] = 0
+        data['radius'] = 0
+        data['text'] = ''
+
+        if self.tollcircle_df is None or len(self.tollcircle_df) == 0:
+            return pd.DataFrame(data, index=[0]).to_dict(orient='list')
+
+        center_x, center_y = merc(self.tollcircle_df['center_lat'][0],
+                                  self.tollcircle_df['center_lon'][0])
+        border_x, border_y = merc(self.tollcircle_df['border_lat'][0],
+                                  self.tollcircle_df['border_lon'][0])
+        radius = np.linalg.norm([center_x-border_x, center_y-border_y])
+
+        data['center_x'] = center_x
+        data['center_y'] = center_y
+        data['radius'] = radius
+        toll = self.tollcircle_df['toll'][0]
+        unit = '[$/mile]' if  self.tollcircle_df['type'][0] == 'permile' else '[$]'
+        data['text'] = f"{toll:.2f} " + unit
+        return pd.DataFrame(data, index=[0]).to_dict(orient='list')
+
 
     def make_modeinc_input_data(self, max_incentive=50, max_age=120,
             max_income=150000):

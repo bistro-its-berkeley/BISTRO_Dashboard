@@ -99,6 +99,22 @@ class BistroDB(object):
         return pd.DataFrame(
             data, columns=['simulation_id','datetime','scenario', 'name'])
 
+    def load_links(self, scenario):
+        data = self.query("""
+            SELECT l.link_id, fnode.x, fnode.y, tnode.x, tnode.y
+            FROM link l
+            INNER JOIN node fnode ON fnode.node_id = l.original_node_id
+                                  AND fnode.scenario = '{0}'
+            INNER JOIN node tnode ON tnode.node_id = l.destination_node_id
+                                  AND tnode.scenario = '{0}'
+            WHERE l.scenario = '{0}'
+            """.format(scenario))
+        return pd.DataFrame(
+            data,
+            columns=['LinkId', 'fromLocationX', 'fromLocationY', 'toLocationX',
+                     'toLocationY']
+            )
+
     def load_frequency(self, simulation_id):
         db_cols = ['agency_id', 'route_id', 'service_start',
                    'service_end', 'frequency', 'vehicle_type']
@@ -165,6 +181,20 @@ class BistroDB(object):
             )
 
         return df[['agencyId','routeId','vehicleTypeId']]
+
+    def load_tollcircle(self, simulation_id):
+        db_cols = ['type', 'toll', 'center_lat', 'center_lon', 'border_lat',
+                   'border_lon']
+        data = self.get_table(
+            'tollcircle', cols=db_cols,
+            condition="WHERE run_id = UUID_TO_BIN('{}')".format(simulation_id))
+
+        df = pd.DataFrame(
+            data,
+            columns=['type', 'toll', 'center_lat', 'center_lon', 'border_lat',
+                   'border_lon']
+            )
+        return df
 
     def load_scores(self, simulation_ids):
         if len(simulation_ids) > 1:
