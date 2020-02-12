@@ -769,7 +769,10 @@ class Submission():
         vmt_bus_ridership = vmt_bus_ridership.groupby(
             ['Hour', 'ridership'])['length'].sum().reset_index()
 
-        vmt_bus_ridership.loc[:, 'length'] = vmt_bus_ridership['length'] / self.simulation_count
+        # translate meters to miles
+        vmt_bus_ridership.loc[:, 'length'] = round(
+            vmt_bus_ridership['length'].apply(
+                lambda x: x * 0.000621371), 0) / self.simulation_count
 
         vmt_bus_ridership = vmt_bus_ridership.pivot(
             index='Hour',
@@ -802,7 +805,10 @@ class Submission():
         vmt_on_demand.replace(np.nan, 0, inplace=True)
         vmt_on_demand.loc[:, "Hour"] = vmt_on_demand["Hour"].astype("int")
 
-        vmt_on_demand.loc[:,'length'] = vmt_on_demand.loc[:,'length'] / self.simulation_count
+        # translate meters to miles
+        vmt_on_demand.loc[:,'length'] = round(
+            vmt_on_demand.loc[:,'length'].apply(
+                lambda x: x * 0.000621371), 0) / self.simulation_count
 
         vmt_on_demand = vmt_on_demand.pivot(
             index='Hour', 
