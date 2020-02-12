@@ -128,9 +128,9 @@ class Submission():
                 "vehicleTypeId", "opAndMaintCost"]].set_index("vehicleTypeId", drop=True).T.to_dict("records")[0]
             self.data_loaded = True
         else:
+            #TODO(Robert) set ENV variable for db key
             db = BistroDB(
-                db_name='bistro', user_name='bistroclt', db_key='client',
-                host='13.56.123.155')
+                db_name='', user_name='', db_key='',host='')
             self.links_df = self.load_links(db, self.scenario)
             self.frequency_df = db.load_frequency(self.simulation_ids[0])
             self.fares_df = db.load_fares(self.simulation_ids[0])

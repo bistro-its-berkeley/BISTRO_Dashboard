@@ -989,9 +989,9 @@ title_div = Div(text="""<link href="https://fonts.googleapis.com/css?family=Kaus
 # except IOError:
 #     submission_dirs = find_submissions()
 # submissions = submission_dirs.loc[submission_dirs['show'] == 1, 'submission_dir'].to_list()
+#TODO(Robert) setup DB keys
 bistro_db = BistroDB(
-    db_name='bistro', user_name='bistroclt', db_key='client',
-    host='13.56.123.155')
+    db_name='', user_name='', db_key='',host='')
 simulations = bistro_db.load_simulation_df()
 
 submissions = []
