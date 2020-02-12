@@ -1,11 +1,7 @@
-Dashboard_Uber_Prize
+BISTRO-Dashboard
 ====================
 
-.. image:: https://img.shields.io/pypi/v/Dashboard_Uber_Prize.svg
-    :target: https://pypi.python.org/pypi/Dashboard_Uber_Prize
-    :alt: Latest PyPI version
-
-Visualizations of Uber Prize Results
+Visualizations of BISTRO Results
 
 Usage
 -----
@@ -17,9 +13,9 @@ column in `submission_files.csv` or provide your custom `submission_files_overri
 
 To run the app, type:
 ::
-	bokeh serve --show Dashboard_Uber_Prize/
+	bokeh serve --show BISTRO-Dashboard/
 
-Your browser will then open to: `http://localhost:5006/Dashboard_Uber_Prize`.
+Your browser will then open to: `http://localhost:5006/BISTRO-Dashboard`.
 
 It may take a minute or so for the dashboard to load up, depending on how many submissions you are
 comparing. Once it loads up, use the dropdown menus to choose the two scenario-submission pairs that 
@@ -29,7 +25,7 @@ Installation
 ------------
 To pull down the repo, type this into your terminal in the directory you want this installed:
 ::
-	git clone https://github.com/vgolfier/Dashboard_Uber_Prize.git
+	git clone https://github.com/bistro-its-berkeley/BISTRO-Dashboard.git
 
 Create a virtual environment to install your python packages in, and install the requirements.
 ::
@@ -50,5 +46,5 @@ Licence
 Authors
 -------
 
-`Dashboard_Uber_Prize` was written by `Jonny Lee <jonny@uber.com>`_, `Valentine Golfier-Vetterli <vgolfi@ext.uber.com>`_, `Sidney Feygin
-<sfeygi@ext.uber.com>`_, and `Jessica Lazarus <jlazar2@ext.uber.com>`_.
+`BISTRO-Dashboard` was written by `Jonny Lee <jonny@uber.com>`_, `Valentine Golfier-Vetterli <vgolfi@ext.uber.com>`_, `Sidney Feygin
+<sfeygi@ext.uber.com>`_, `Jessica Lazarus <jlazar2@ext.uber.com>`_, and `Robert Zangnan Yu <yuzan@berkeley.edu>`_.
