@@ -9,7 +9,7 @@ import pandas as pd
 from bokeh.models import ColumnDataSource
 from bokeh.palettes import Dark2, Category10, Category20, Plasma256, YlOrRd
 
-from db_loader import BistroDB
+from db_loader import BistroDB, parse_credential
 
 HOURS = [str(h) for h in range(24)]
 
@@ -128,9 +128,9 @@ class Submission():
                 "vehicleTypeId", "opAndMaintCost"]].set_index("vehicleTypeId", drop=True).T.to_dict("records")[0]
             self.data_loaded = True
         else:
-            #TODO(Robert) set ENV variable for db key
             db = BistroDB(
-                db_name='', user_name='', db_key='',host='')
+                *parse_credential(join(dirname(__file__),'dashboard_profile.ini')
+            ))
             self.links_df = self.load_links(db, self.scenario)
             self.frequency_df = db.load_frequency(self.simulation_ids[0])
             self.fares_df = db.load_fares(self.simulation_ids[0])

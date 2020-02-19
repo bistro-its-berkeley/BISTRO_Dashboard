@@ -1,7 +1,17 @@
+import configparser
+
 import mysql.connector
 from mysql.connector import Error, errorcode
 
 import pandas as pd
+
+
+def parse_credential(db_profile):
+    config = configparser.ConfigParser()
+    config.read(db_profile)
+    db_login = config['DB_LOGIN']
+    return (db_login['DATABASE_NAME'], db_login['DATABASE_USER_NAME'],
+            db_login['DATABASE_KEY'], db_login['DATABASE_HOST'])
 
 
 class BistroDB(object):

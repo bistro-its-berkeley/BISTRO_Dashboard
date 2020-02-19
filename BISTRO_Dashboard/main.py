@@ -24,7 +24,7 @@ from bokeh.transform import dodge, transform
 from bokeh.tile_providers import CARTODBPOSITRON
 
 from submission import Submission
-from db_loader import BistroDB
+from db_loader import BistroDB, parse_credential
 
 
 HOURS = [str(h) for h in range(24)]
@@ -1015,7 +1015,8 @@ title_div = Div(text="""<link href="https://fonts.googleapis.com/css?family=Kaus
 # submissions = submission_dirs.loc[submission_dirs['show'] == 1, 'submission_dir'].to_list()
 #TODO(Robert) setup DB keys
 bistro_db = BistroDB(
-    db_name='', user_name='', db_key='',host='')
+    *parse_credential(join(dirname(__file__),'dashboard_profile.ini'))
+)
 simulations = bistro_db.load_simulation_df()
 
 submissions = []
