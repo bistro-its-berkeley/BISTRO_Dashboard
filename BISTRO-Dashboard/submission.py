@@ -204,6 +204,8 @@ class Submission():
             self.make_congestion_travel_time_per_passenger_trip_data()
         self.congestion_miles_traveled_per_mode_data = \
             self.make_congestion_miles_traveled_per_mode_data()
+        self.congestion_car_vmt_by_time_data = \
+            self.make_congestion_car_vmt_by_time_data()
         self.congestion_bus_vmt_by_ridership_data = \
             self.make_congestion_bus_vmt_by_ridership_data()
         self.congestion_on_demand_vmt_by_phases_data = \
@@ -713,6 +715,37 @@ class Submission():
             color=[palette[0], palette[1], palette[3], palette[4]])
         return data
 
+    def make_congestion_car_vmt_by_time_data(self):
+        columns = ["Distance_m", "Start_time"]
+
+        vmt_car_ridership = self.legs_df[self.legs_df["Mode"] == "car"][columns]
+        # Split the travels by hour of the day
+        edges = range(0,25*3600,3600)
+        vmt_car_ridership.loc[:, "Hour"] = pd.cut(
+            vmt_car_ridership["Start_time"],
+            bins=edges,
+            labels=HOURS,
+            include_lowest=True)
+
+        vmt_car_ridership = vmt_car_ridership[["Hour","Distance_m"]].groupby(
+            "Hour").sum().reset_index()
+        # translate meters to miles
+        vmt_car_ridership.loc[:, 'Distance_m'] = round(
+            vmt_car_ridership['Distance_m'].apply(
+                lambda x: x * 0.000621371), 0) / self.simulation_count
+        vmt_car_ridership.replace(np.nan, 0, inplace=True)
+        vmt_car_ridership.loc[:, "Hour"] = vmt_car_ridership["Hour"].astype("int")
+
+        for h in HOURS:
+            if int(h) not in vmt_car_ridership["Hour"].values:
+                df = pd.DataFrame([int(h), 0.0]).T
+                df.columns = ['Hour','Distance_m']
+                vmt_car_ridership = vmt_car_ridership.append(
+                    df, ignore_index=True, sort=False)
+
+        data = vmt_car_ridership.sort_values('Hour').to_dict(orient='list')
+        return data
+
     def make_congestion_bus_vmt_by_ridership_data(self):
         columns = ["numPassengers", "vehicleType", "length",
                    "departureTime", "arrivalTime"]
@@ -768,7 +801,6 @@ class Submission():
 
         vmt_bus_ridership = vmt_bus_ridership.groupby(
             ['Hour', 'ridership'])['length'].sum().reset_index()
-
         # translate meters to miles
         vmt_bus_ridership.loc[:, 'length'] = round(
             vmt_bus_ridership['length'].apply(
@@ -817,7 +849,7 @@ class Submission():
         vmt_on_demand = vmt_on_demand.reset_index()
 
         for h in HOURS:
-            if int(h) not in vmt_on_demand.index:
+            if int(h) not in vmt_on_demand["Hour"].values:
                 df = pd.DataFrame([int(h), 0.0, 0.0]).T
                 df.columns = ['Hour','fare','fetch']
                 vmt_on_demand = vmt_on_demand.append(

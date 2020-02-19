@@ -55,6 +55,8 @@ SOURCE_NAME_DATA_PAIR = [
     'congestion_travel_time_per_passenger_trip_data'),
 ('congestion_miles_traveled_per_mode_source',
     'congestion_miles_traveled_per_mode_data'),
+('congestion_car_vmt_by_time_source',
+    'congestion_car_vmt_by_time_data'),
 ('congestion_bus_vmt_by_ridership_source',
     'congestion_bus_vmt_by_ridership_data'),
 ('congestion_on_demand_vmt_by_phases_source',
@@ -572,6 +574,28 @@ def plot_congestion_miles_traveled_per_mode(source, sub_key=1, savefig='None'):
       export_svgs(p, filename="figures/{}/outputs/congestion_miles_traveled_per_mode.svg".format(sub_key))
     elif savefig == 'png':
       export_png(p, filename="figures/{}/outputs/congestion_miles_traveled_per_mode.png".format(sub_key))
+
+    return p
+
+def plot_congestion_car_vmt_by_time(source, sub_key=1, savefig='None'):
+    p = figure(x_range=HOURS,
+               plot_height=350, plot_width=700,
+               toolbar_location=None, tools="")
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text="Car miles traveled by time of day", text_font_size="14pt"), 'above')
+
+    p.vbar(x='Hour', top='Distance_m', source=source, width=0.85)
+
+    p.xaxis.axis_label = 'Hour of day'
+    p.xaxis.major_label_orientation = math.pi / 2
+    p.yaxis.axis_label = 'Vehicle miles traveled'
+    p.yaxis[0].formatter = NumeralTickFormatter(format="0.0a")
+
+    if savefig == 'svg':
+      p.output_backend = "svg"
+      export_svgs(p, filename="figures/{}/outputs/congestion_car_vmt_by_time.svg".format(sub_key))
+    elif savefig == 'png':
+      export_png(p, filename="figures/{}/outputs/congestion_car_vmt_by_time.png".format(sub_key))
 
     return p
 
@@ -1142,6 +1166,10 @@ for sub_order, sub_key in \
         plot_congestion_miles_traveled_per_mode(
             source=sources['congestion_miles_traveled_per_mode_source'],
             sub_key=sub_key)
+    plots[sub_order]['congestion_car_vmt_by_time_plot'] = \
+        plot_congestion_car_vmt_by_time(
+            source=sources['congestion_car_vmt_by_time_source'],
+            sub_key=sub_key)
     plots[sub_order]['congestion_bus_vmt_by_ridership_plot'] = \
         plot_congestion_bus_vmt_by_ridership(
             source=sources['congestion_bus_vmt_by_ridership_source'],
@@ -1195,6 +1223,7 @@ submission_outputs_congestion_plots = [
     'congestion_travel_time_by_mode_plot',
     'congestion_travel_time_per_passenger_trip_plot',
     'congestion_miles_traveled_per_mode_plot',
+    'congestion_car_vmt_by_time_plot',
     'congestion_bus_vmt_by_ridership_plot',
     'congestion_on_demand_vmt_by_phases_plot',
     'congestion_travel_speed_plot'
