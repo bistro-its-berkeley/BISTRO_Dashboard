@@ -3,7 +3,8 @@ env/
 *.pyc
 *.ipynb
 *.DS_Store
-Dashboard_Uber_Prize/submission_files_override.csv
-Dashboard_Uber_Prize/data/submissions/*
-!Dashboard_Uber_Prize/data/submissions/*/.gitkeep
+BISTRO_Dashboard/submission_files_override.csv
+BISTRO_Dashboard/data/submissions/*
+!BISTRO_Dashboard/data/submissions/*/.gitkeep
 figures/
+BISTRO_Dashboard/dashboard_profile.ini
