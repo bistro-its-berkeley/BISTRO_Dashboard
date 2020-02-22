@@ -491,7 +491,7 @@ def plot_mode_choice_by_distance(source, sub_key=1, savefig='None'):
 
 def plot_congestion_travel_time_by_mode(source, sub_key=1, savefig='None'):
 
-    p = figure(x_range=MODES+['mixed_mode'], #y_range=(0, 60),
+    p = figure(x_range=MODES, #y_range=(0, 60),
                plot_height=350, plot_width=700, 
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
@@ -519,7 +519,7 @@ def plot_congestion_travel_time_per_passenger_trip(source, sub_key=1, savefig='N
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
     p.add_layout(Title(text="Average travel time per passenger-trip over the day", text_font_size="14pt"), 'above')
 
-    nbins = len(MODES+['mixed_mode'])
+    nbins = len(MODES)
     total_width = 0.85
     bin_width = total_width / nbins
     bin_loc = -total_width / 2 + bin_width / 2
@@ -527,9 +527,8 @@ def plot_congestion_travel_time_per_passenger_trip(source, sub_key=1, savefig='N
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Trip Mode')
 
-    for i, mode_i in enumerate(MODES+['mixed_mode']):
-        p.vbar(x=dodge('index', bin_loc, range=p.x_range), top=mode_i, width=bin_width-0.04, source=source,
-               color=palette[i], legend=value(mode_i))
+    for i, mode_i in enumerate(MODES):
+        p.vbar(x=dodge('index', bin_loc, range=p.x_range), top=mode_i, width=bin_width-0.04, source=source, color=palette[i], legend=value(mode_i))
         bin_loc += bin_width
 
     p.xaxis.axis_label = 'Hour of day'

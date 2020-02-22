@@ -7,4 +7,4 @@ BISTRO_Dashboard/submission_files_override.csv
 BISTRO_Dashboard/data/submissions/*
 !BISTRO_Dashboard/data/submissions/*/.gitkeep
 figures/
-BISTRO_Dashboard/dashboard_profile.ini
+*.ini

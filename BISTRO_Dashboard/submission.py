@@ -642,10 +642,14 @@ class Submission():
 
     def make_congestion_travel_time_by_mode_data(self):
 
-        travel_time = pd.DataFrame(
-            self.travel_times_df.set_index("TravelTimeMode\Hour").mean(axis=1)
-        ).T
+        # travel_time = pd.DataFrame(
+        #     self.travel_times_df.set_index("TravelTimeMode\Hour").mean(axis=1)
+        # ).T
 
+        mode_df = self.trips_df[['realizedTripMode', 'Duration_sec']].copy()
+        # turn seconds into minutes
+        travel_time = (mode_df.groupby('realizedTripMode').mean() / 60).T
+        travel_time = travel_time.reset_index(drop=True)
         #travel_time.rename(columns={'ride_hail': 'OnDemand_ride'}, inplace=True)
         # del travel_time['others']
 
@@ -666,8 +670,23 @@ class Submission():
 
     def make_congestion_travel_time_per_passenger_trip_data(self):
 
-        travel_time = self.travel_times_df.set_index(
-            "TravelTimeMode\Hour").T.reset_index()
+        # travel_time = self.travel_times_df.set_index(
+        #     "TravelTimeMode\Hour").T.reset_index()
+
+        mode_df = self.trips_df[['realizedTripMode', 'Duration_sec', 'Start_time']].copy()
+        edges = range(0,25*3600,3600)
+        mode_df.loc[:, "Hour"] = pd.cut(
+            mode_df["Start_time"],
+            bins=edges,
+            labels=HOURS,
+            include_lowest=True)
+
+        travel_time = mode_df[['realizedTripMode', 'Duration_sec', 'Hour']].groupby(
+            ['realizedTripMode','Hour']).mean().fillna(0)
+        # translate travel time to minute
+        travel_time = (travel_time.reset_index().pivot(
+            index='realizedTripMode', columns='Hour') / 60
+        ).T.reset_index(drop=True).reset_index()
 
         for mode in self.modes:
             if mode not in travel_time.columns:
