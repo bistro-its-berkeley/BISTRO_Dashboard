@@ -100,7 +100,7 @@ def plot_normalized_scores(source, sub_key=1, savefig='None'):
 
     if savefig == 'svg':
       p.output_backend = "svg"
-      export_svgs(p, filename="figures/{}/scores.svg".format(sub_key))
+      export_svgs(p, filename="figures/{}/normalized_scores.svg".format(sub_key))
     elif savefig == 'png':
       export_png(p, filename="figures/{}/normalized_scores.png".format(sub_key))
 
@@ -269,6 +269,7 @@ def plot_tollcircle(link_source, circle_source, sub_key=1, savefig='None'):
         x_axis_type="mercator",
         y_axis_type="mercator")
     p.add_tile(CARTODBPOSITRON)
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
     p.add_layout(Title(text="Toll Circle", text_font_size="14pt"), 'above')
 
     seg = Segment(x0="from_x", y0="from_y", x1="to_x", y1="to_y",
@@ -983,27 +984,6 @@ def create_dir_tree(sub_key):
     except OSError:
         pass
 
-def update_submission(submission_sources, sub_order):
-
-    def update_sub_order(attrname, old, new):
-        # This function updates the data source for plots whenever people select
-        # a different submission from the dropdown
-        scenario_key, submission_key = new.split('/')
-        create_dir_tree(submission_key)
-        if sub_order == 'submission1':
-            submission1_key = submission_key
-        else:
-            submission2_key = submission_key
-
-        submission = submission_dict[scenario_key]['submissions'][submission_key]
-        submission.get_data()
-        submission.make_data_sources()
-        for source_name, data_name in SOURCE_NAME_DATA_PAIR:
-            submission_sources[sub_order][source_name].data = \
-                getattr(submission, data_name)
-
-    return update_sub_order
-
 title_div = Div(text="""<link href="https://fonts.googleapis.com/css?family=Kaushan+Script" rel="stylesheet" type="text/css"><font style='color:#fdb515ff; font-family:"Kaushan Script"'>BISTRO</font><b> Visualization Dashboard</b>""", width=800, height=10, style={'font-size': '200%'})
 
 ### Instantiate all submission objects and generate data sources ###
@@ -1116,87 +1096,87 @@ for sub_order, sub_key in \
         [('submission1',submission1_key), ('submission2',submission2_key)]:
     sources = submission_sources[sub_order]
     submission = submission_dict[scenario_key]['submissions'][sub_key]
-    plots[sub_order]['normalized_scores_plot'] = plot_normalized_scores(
+    plots[sub_order]['normalized_scores'] = plot_normalized_scores(
         source=sources['normalized_scores_source'], sub_key=sub_key)
-    plots[sub_order]['fleetmix_input_plot'] = plot_fleetmix_input(
+    plots[sub_order]['fleetmix_input'] = plot_fleetmix_input(
         source=sources['fleetmix_input_source'], sub_key=sub_key,
         route_ids=submission.route_ids)
-    plots[sub_order]['routesched_input_plot'] = plot_routesched_input(
+    plots[sub_order]['routesched_input'] = plot_routesched_input(
         line_source=sources['routesched_input_line_source'],
         start_source=sources['routesched_input_start_source'],
         end_source=sources['routesched_input_end_source'],
         sub_key=sub_key)
-    plots[sub_order]['fares_input_plot'] = plot_fares_input(
+    plots[sub_order]['fares_input'] = plot_fares_input(
         source=sources['fares_input_source'], sub_key=sub_key,
         route_ids=submission.route_ids)
-    plots[sub_order]['modeinc_input_plot'] = plot_modeinc_input(
+    plots[sub_order]['modeinc_input'] = plot_modeinc_input(
         source=sources['modeinc_input_source'], sub_key=sub_key)
-    plots[sub_order]['tollcircle_plot'] = plot_tollcircle(
+    plots[sub_order]['tollcircle'] = plot_tollcircle(
         link_source=sources['link_source'],
         circle_source=sources['tollcircle_source'],  sub_key=sub_key)
-    plots[sub_order]['mode_planned_pie_chart_plot'] = plot_mode_pie_chart(
+    plots[sub_order]['mode_planned_pie_chart'] = plot_mode_pie_chart(
         source=sources['mode_planned_pie_chart_source'],
         choice_type='planned', sub_key=sub_key)
-    plots[sub_order]['mode_realized_pie_chart_plot'] = plot_mode_pie_chart(
+    plots[sub_order]['mode_realized_pie_chart'] = plot_mode_pie_chart(
         source=sources['mode_realized_pie_chart_source'],
         choice_type='realized', sub_key=sub_key)
-    plots[sub_order]['mode_choice_by_time_plot'] = plot_mode_choice_by_time(
+    plots[sub_order]['mode_choice_by_time'] = plot_mode_choice_by_time(
         source=sources['mode_choice_by_time_source'], sub_key=sub_key)
-    plots[sub_order]['mode_choice_by_income_group_plot'] = \
+    plots[sub_order]['mode_choice_by_income_group'] = \
         plot_mode_choice_by_income_group(
             source=sources['mode_choice_by_income_group_source'],
             sub_key=sub_key)
-    plots[sub_order]['mode_choice_by_age_group_plot'] = \
+    plots[sub_order]['mode_choice_by_age_group'] = \
         plot_mode_choice_by_age_group(
             source=sources['mode_choice_by_age_group_source'],
             sub_key=sub_key)
-    plots[sub_order]['mode_choice_by_distance_plot'] = \
+    plots[sub_order]['mode_choice_by_distance'] = \
         plot_mode_choice_by_distance(
             source=sources['mode_choice_by_distance_source'],
             sub_key=sub_key)
-    plots[sub_order]['congestion_travel_time_by_mode_plot'] = \
+    plots[sub_order]['congestion_travel_time_by_mode'] = \
         plot_congestion_travel_time_by_mode(
             source=sources['congestion_travel_time_by_mode_source'],
             sub_key=sub_key)
-    plots[sub_order]['congestion_travel_time_per_passenger_trip_plot'] = \
+    plots[sub_order]['congestion_travel_time_per_passenger_trip'] = \
         plot_congestion_travel_time_per_passenger_trip(
             source=sources['congestion_travel_time_per_passenger_trip_source'],
             sub_key=sub_key)
-    plots[sub_order]['congestion_miles_traveled_per_mode_plot'] = \
+    plots[sub_order]['congestion_miles_traveled_per_mode'] = \
         plot_congestion_miles_traveled_per_mode(
             source=sources['congestion_miles_traveled_per_mode_source'],
             sub_key=sub_key)
-    plots[sub_order]['congestion_car_vmt_by_time_plot'] = \
+    plots[sub_order]['congestion_car_vmt_by_time'] = \
         plot_congestion_car_vmt_by_time(
             source=sources['congestion_car_vmt_by_time_source'],
             sub_key=sub_key)
-    plots[sub_order]['congestion_bus_vmt_by_ridership_plot'] = \
+    plots[sub_order]['congestion_bus_vmt_by_ridership'] = \
         plot_congestion_bus_vmt_by_ridership(
             source=sources['congestion_bus_vmt_by_ridership_source'],
             sub_key=sub_key)
-    plots[sub_order]['congestion_on_demand_vmt_by_phases_plot'] = \
+    plots[sub_order]['congestion_on_demand_vmt_by_phases'] = \
         plot_congestion_on_demand_vmt_by_phases(
             source=sources['congestion_on_demand_vmt_by_phases_source'],
             sub_key=sub_key)
-    plots[sub_order]['congestion_travel_speed_plot'] = \
+    plots[sub_order]['congestion_travel_speed'] = \
         plot_congestion_travel_speed(
             source=sources['congestion_travel_speed_source'], sub_key=sub_key)
-    plots[sub_order]['los_travel_expenditure_plot'] = \
+    plots[sub_order]['los_travel_expenditure'] = \
         plot_los_travel_expenditure(
             source=sources['los_travel_expenditure_source'],
             sub_key=sub_key)
-    plots[sub_order]['los_crowding_plot'] = plot_los_crowding(
+    plots[sub_order]['los_crowding'] = plot_los_crowding(
         source=sources['los_crowding_source'], sub_key=sub_key,
         route_ids=submission.route_ids)
-    plots[sub_order]['transit_cb_plot'] = plot_transit_cb(
+    plots[sub_order]['transit_cb'] = plot_transit_cb(
         costs_source=sources['transit_cb_costs_source'],
         benefits_source=sources['transit_cb_benefits_source'], sub_key=sub_key,
         route_ids=submission.route_ids)
-    plots[sub_order]['transit_inc_by_mode_plot'] = plot_transit_inc_by_mode(
+    plots[sub_order]['transit_inc_by_mode'] = plot_transit_inc_by_mode(
         source=sources['transit_inc_by_mode_source'], sub_key=sub_key)
-    plots[sub_order]['toll_revenue_by_time_plot'] = plot_toll_revenue_by_time(
+    plots[sub_order]['toll_revenue_by_time'] = plot_toll_revenue_by_time(
         source=sources['toll_revenue_by_time_source'], sub_key=sub_key)
-    plots[sub_order]['sustainability_25pm_per_mode_plot'] = \
+    plots[sub_order]['sustainability_25pm_per_mode'] = \
         plot_sustainability_25pm_per_mode(
             source=sources['sustainability_25pm_per_mode_source'],
             sub_key=sub_key)
@@ -1205,42 +1185,42 @@ for sub_order, sub_key in \
 ### Gather plot objects into lists ###
 
 submission_inputs_plots = [
-    'fleetmix_input_plot',
-    'routesched_input_plot',
-    'fares_input_plot',
-    'modeinc_input_plot'
+    'fleetmix_input',
+    'routesched_input',
+    'fares_input',
+    'modeinc_input'
 ]
-submission_scores_plots = ['normalized_scores_plot']
+submission_scores_plots = ['normalized_scores']
 submission_outputs_mode_plots = [
-    'mode_planned_pie_chart_plot',
-    'mode_realized_pie_chart_plot',
-    'mode_choice_by_time_plot',
-    'mode_choice_by_income_group_plot',
-    'mode_choice_by_age_group_plot',
-    'mode_choice_by_distance_plot'
+    'mode_planned_pie_chart',
+    'mode_realized_pie_chart',
+    'mode_choice_by_time',
+    'mode_choice_by_income_group',
+    'mode_choice_by_age_group',
+    'mode_choice_by_distance'
 ]
 submission_outputs_congestion_plots = [
-    'congestion_travel_time_by_mode_plot',
-    'congestion_travel_time_per_passenger_trip_plot',
-    'congestion_miles_traveled_per_mode_plot',
-    'congestion_car_vmt_by_time_plot',
-    'congestion_bus_vmt_by_ridership_plot',
-    'congestion_on_demand_vmt_by_phases_plot',
-    'congestion_travel_speed_plot'
+    'congestion_travel_time_by_mode',
+    'congestion_travel_time_per_passenger_trip',
+    'congestion_miles_traveled_per_mode',
+    'congestion_car_vmt_by_time',
+    'congestion_bus_vmt_by_ridership',
+    'congestion_on_demand_vmt_by_phases',
+    'congestion_travel_speed'
 ]
 submission_outputs_los_plots = [
-    'los_travel_expenditure_plot',
-    'los_crowding_plot'
+    'los_travel_expenditure',
+    'los_crowding'
 ]
 submission_outputs_transitcb_plots = [
-    'transit_cb_plot',
-    'transit_inc_by_mode_plot'
+    'transit_cb',
+    'transit_inc_by_mode'
 ]
 submission_outputs_toll_plots = [
-    'toll_revenue_by_time_plot',
-    'tollcircle_plot'
+    'toll_revenue_by_time',
+    'tollcircle'
 ]
-submission_outputs_sustainability_plots = ['sustainability_25pm_per_mode_plot']
+submission_outputs_sustainability_plots = ['sustainability_25pm_per_mode']
 
 ######################################
 sub_orders = ['submission1','submission2']
@@ -1282,6 +1262,42 @@ submission2_select = Select(value='{}/{}'.format(scenario_key, submission2_key),
                      options=sorted(submissions))
 
 pulldowns = row(submission1_select, submission2_select)
+
+
+def update_submission(submission_sources, sub_order):
+
+    def update_sub_order(attrname, old, new):
+        # This function updates the data source for plots whenever people select
+        # a different submission from the dropdown
+        scenario_key, submission_key = new.split('/')
+        create_dir_tree(submission_key)
+        if sub_order == 'submission1':
+            submission1_key = submission_key
+        else:
+            submission2_key = submission_key
+
+        submission = submission_dict[scenario_key]['submissions'][submission_key]
+        submission.get_data()
+        submission.make_data_sources()
+        for source_name, data_name in SOURCE_NAME_DATA_PAIR:
+            submission_sources[sub_order][source_name].data = \
+                getattr(submission, data_name)
+
+        # change the title of plot based on different layout
+        for key in plots[sub_order].keys():
+            if key == 'fares_input':
+                plots[sub_order][key].children[0].above[0].text = submission_key
+            elif key == 'modeinc_input':
+                plots[sub_order][key].children[0].children[0]\
+                    .above[0].text = submission_key
+                plots[sub_order][key].children[0].children[1]\
+                    .above[0].text = submission_key
+            else:
+                plots[sub_order][key].above[0].text = submission_key
+            #Title(text=submission_key, text_font_style="italic")
+
+    return update_sub_order
+
 
 # update_submission it self isn't a real 'function', it returns another function
 # that will update plot data source for either submission1 or 2 depends on the
