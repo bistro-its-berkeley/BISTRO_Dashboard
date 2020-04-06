@@ -42,7 +42,7 @@ SOURCE_NAME_DATA_PAIR = [
 ('fares_input_source', 'fares_input_data'),
 ('modeinc_input_source', 'modeinc_input_data'),
 ('link_source','link_data'),
-('tollcircle_source','tollcircle_data'),
+('toll_circle_source','toll_circle_data'),
 ('mode_planned_pie_chart_source', 'mode_planned_pie_chart_data'),
 ('mode_realized_pie_chart_source', 'mode_realized_pie_chart_data'),
 ('mode_choice_by_time_source', 'mode_choice_by_time_data'),
@@ -68,9 +68,22 @@ SOURCE_NAME_DATA_PAIR = [
 ('transit_cb_benefits_source', 'transit_cb_benefits_data'),
 ('transit_inc_by_mode_source', 'transit_inc_by_mode_data'),
 ('toll_revenue_by_time_source','toll_revenue_by_time_data'),
-('sustainability_25pm_per_mode_source', 'sustainability_25pm_per_mode_data')
+('sustainability_25pm_per_mode_source', 'sustainability_25pm_per_mode_data'),
+('sustainability_ghg_per_mode_source', 'sustainability_ghg_per_mode_data')
 ]
 
+def save_png(plot, sub_key, name):
+    f_name = ""
+    f_name += "figures/" + sub_key + "/"
+    if name == 'toll_circle' or 'input' in name:
+        f_name += "inputs/"
+    elif 'scores' not in name:
+        f_name += "outputs/"
+    else:
+        pass
+    f_name += name + ".png"
+
+    export_png(plot, filename=f_name)
 
 def plot_normalized_scores(source, sub_key=1, savefig='None'):
     
@@ -78,8 +91,14 @@ def plot_normalized_scores(source, sub_key=1, savefig='None'):
                y_range=CATEGORIES[::-1], 
                plot_height=350, plot_width=1200,
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Weighted subscores and Submission score", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Weighted subscores for each KPI and Submission score",
+              text_font_style="normal"), 'above')
+    p.add_layout(
+        Title(text="Normalized Scores",
+              text_font_size="14pt"),
+        'above')
 
     p.hbar(y='Component Name', height=0.5, 
            left=0,
@@ -111,7 +130,7 @@ def plot_fleetmix_input(source, sub_key=1, savefig='None', route_ids=[]):
     p = figure(x_range=BUSES_LIST, y_range=[str(route_id) for route_id in route_ids], 
                plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(Title(text="Bus fleet mix", text_font_size="14pt"), 'above')
 
     p.circle(x='vehicleTypeId', y='routeId', source=source, size=8)
@@ -132,7 +151,7 @@ def plot_routesched_input(line_source, start_source, end_source, sub_key=1, save
     p = figure(x_range=(0, 24), y_range=(-0.1, 2.1), 
                plot_height=450, plot_width=600,
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(Title(text="Frequency adjustment", text_font_size="14pt"), 'above')
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Bus Route')
@@ -166,7 +185,7 @@ def plot_fares_input(source, max_fare=10, max_age=121, sub_key=1, savefig='None'
     p = figure(x_range=(0, max_age), y_range=route_ids, 
                plot_height=350, plot_width=475,
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(Title(text="Mass transit fares", text_font_size="14pt"), 'above')
 
     p.hbar(y='routeId', height=0.5, 
@@ -207,7 +226,7 @@ def plot_modeinc_input(source, max_incentive=50, max_age=121, max_income=150000,
     p1 = figure(x_range=(0, max_age), y_range=inc_modes, 
                plot_height=175, plot_width=475,
                toolbar_location=None, tools="")
-    p1.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p1.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p1.add_layout(Title(text="Incentives by age group", text_font_size="14pt"), 'above')
 
     p1.hbar(y='mode', height=0.5, 
@@ -222,7 +241,7 @@ def plot_modeinc_input(source, max_incentive=50, max_age=121, max_income=150000,
     p2 = figure(x_range=(0, max_income), y_range=inc_modes, 
                plot_height=175, plot_width=475,
                toolbar_location=None, tools="")
-    p2.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p2.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p2.add_layout(Title(text="Incentives by income group", text_font_size="14pt"), 'above')
 
     p2.hbar(y='mode', height=0.5, 
@@ -259,7 +278,7 @@ def plot_modeinc_input(source, max_incentive=50, max_age=121, max_income=150000,
 
     return row(p, color_bar_plot)
 
-def plot_tollcircle(link_source, circle_source, sub_key=1, savefig='None'):
+def plot_toll_circle(link_source, circle_source, sub_key=1, savefig='None'):
     title = 'Toll Circle'
     d = circle_source.data
 
@@ -269,7 +288,10 @@ def plot_tollcircle(link_source, circle_source, sub_key=1, savefig='None'):
         x_axis_type="mercator",
         y_axis_type="mercator")
     p.add_tile(CARTODBPOSITRON)
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Amount of toll applied and its range",
+              text_font_style="normal"), 'above')
     p.add_layout(Title(text="Toll Circle", text_font_size="14pt"), 'above')
 
     seg = Segment(x0="from_x", y0="from_y", x1="to_x", y1="to_y",
@@ -295,9 +317,17 @@ def plot_tollcircle(link_source, circle_source, sub_key=1, savefig='None'):
 def plot_mode_pie_chart(source, choice_type='planned', sub_key=1, savefig='None'):
 
     title = 'Overall {} mode choice'.format(choice_type)
+    if choice_type == 'planned':
+        subtitle = ("Agent’s preferences (initial agent’s plan "
+                    "when leaving from his origin)")
+    else:
+        subtitle = ("Level of service (realized agent’s plan to "
+                    "go from his origin to his destination)")
+
     p = figure(plot_height=400, toolbar_location=None,
                x_range=(-0.5, 1.0))
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(Title(text=subtitle, text_font_style="normal"), 'above')
     p.add_layout(Title(text=title, text_font_size="14pt"), 'above')
 
     p.circle(-0.5, 1.0, size=0.00000001, color="#ffffff", legend='Mode Choice')
@@ -334,7 +364,7 @@ def plot_mode_choice_by_time(source, sub_key=1, savefig='None'):
     p = figure(x_range=HOURS,# y_range=(0, 8000), 
                plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(Title(text="Mode choice by hour", text_font_size="14pt"), 'above')
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Trip Mode')
@@ -372,7 +402,7 @@ def plot_mode_choice_by_income_group(source, sub_key=1, savefig='None'):
     p = figure(x_range=MODES, #y_range=(0, 9000), 
                plot_height=350,
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(Title(text="Mode choice by income group", text_font_size="14pt"), 'above')
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Income Group')
@@ -416,7 +446,7 @@ def plot_mode_choice_by_age_group(source, sub_key=1, savefig='None'):
     p = figure(x_range=MODES, #y_range=(0, 6000), 
                plot_height=350,
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(Title(text="Mode choice by age group", text_font_size="14pt"), 'above')
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Age Group')
@@ -460,8 +490,9 @@ def plot_mode_choice_by_distance(source, sub_key=1, savefig='None'):
     p = figure(x_range=bins, #y_range=(0, 6000), 
                plot_height=350, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Mode choice by trip distance", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Mode choice by trip distance", text_font_size="14pt"), 'above')
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Trip Mode')
 
@@ -495,8 +526,10 @@ def plot_congestion_travel_time_by_mode(source, sub_key=1, savefig='None'):
     p = figure(x_range=MODES, #y_range=(0, 60),
                plot_height=350, plot_width=700, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Average travel time per trip and by mode", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Average travel time per trip and by mode",
+              text_font_size="14pt"), 'above')
 
     p.vbar(x='x', top='y', width=0.8, source=source, color='color')
     
@@ -517,8 +550,10 @@ def plot_congestion_travel_time_per_passenger_trip(source, sub_key=1, savefig='N
     p = figure(x_range=HOURS, #y_range=(0, 350), 
                plot_height=350, plot_width=800, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Average travel time per passenger-trip over the day", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Average travel time per passenger-trip over the day",
+              text_font_size="14pt"), 'above')
 
     nbins = len(MODES)
     total_width = 0.85
@@ -551,8 +586,9 @@ def plot_congestion_miles_traveled_per_mode(source, sub_key=1, savefig='None'):
     p = figure(x_range=['ride_hail', 'car', 'walk', 'bus'], #y_range=(0, 90000), 
                plot_height=350, plot_width=600, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Daily miles traveled per mode", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Daily miles traveled per mode", text_font_size="14pt"), 'above')
 
     p.vbar(x='modes', top='vmt', color='color', source=source, width=0.8)
     
@@ -581,8 +617,9 @@ def plot_congestion_car_vmt_by_time(source, sub_key=1, savefig='None'):
     p = figure(x_range=HOURS,
                plot_height=350, plot_width=700,
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Car miles traveled by time of day", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Car miles traveled by time of day", text_font_size="14pt"), 'above')
 
     p.vbar(x='Hour', top='Distance_m', source=source, width=0.85)
 
@@ -611,8 +648,11 @@ def plot_congestion_bus_vmt_by_ridership(source, sub_key=1, savefig='None'):
     p = figure(x_range=HOURS, #y_range=(0, 1200000), 
                plot_height=350, plot_width=600, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Bus vehicle miles traveled by ridership by time of day", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Bus vehicle miles traveled per bus occupancy"
+                   " state by hour of the day", text_font_style="normal"), 'above')
+    p.add_layout(Title(text="Bus VMT", text_font_size="14pt"), 'above')
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Ridership')
 
@@ -656,8 +696,11 @@ def plot_congestion_on_demand_vmt_by_phases(source, sub_key=1, savefig='None'):
     p = figure(x_range=HOURS, #y_range=(0, 2500000), 
                plot_height=350, plot_width=700, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Vehicle miles traveled by on-demand ride vehicles by driving state", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="On-demand ride vehicle miles traveled per occupancy "
+                   "state by hour of the day", text_font_style="normal"), 'above')
+    p.add_layout(Title(text="On-demand VMT", text_font_size="14pt"), 'above')
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Driving State')
 
@@ -692,8 +735,11 @@ def plot_congestion_travel_speed(source, sub_key=1, savefig='None'):
     p = figure(x_range=bins, #y_range=(0, 12), 
                plot_height=350, plot_width=700, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Average travel speed by time of day per mode", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Average travel speed per passenger trip per mode"
+                   " by hours of the day", text_font_style="normal"), 'above')
+    p.add_layout(Title(text="Average travel speed", text_font_size="14pt"), 'above')
 
     nbins = len(MODES)
     total_width = 0.85
@@ -730,8 +776,11 @@ def plot_los_travel_expenditure(source, sub_key=1, savefig='None'):
     p = figure(x_range=HOURS, #y_range=(0, 6.0), 
                plot_height=350, plot_width=600, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Average travel expenditure per trip and by mode over the day", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Average agent’s travel expenditure per trip (per mode "
+                   "and by hour of the day)", text_font_style="normal"), 'above')
+    p.add_layout(Title(text="Travel Expenditure", text_font_size="14pt"), 'above')
 
     spend_modes = set(['walk_transit', 'drive_transit', 'car', 'ride_hail'])
     nbins = len(spend_modes)
@@ -772,8 +821,11 @@ def plot_los_crowding(source, sub_key=1, savefig='None', route_ids=[]):
     p = figure(x_range=route_ids, #y_range=(0, 15), 
                plot_height=350, plot_width=600, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Average hours of bus crowding by bus route and period of day", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Average Hours of Bus crowding per bus route"
+                   " (by period of the day)", text_font_style="normal"), 'above')
+    p.add_layout(Title(text="Bus Crowding", text_font_size="14pt"), 'above')
 
     nbins = len(labels)
     total_width = 0.85
@@ -812,8 +864,11 @@ def plot_transit_cb(costs_source, benefits_source, sub_key=1, savefig='None', ro
     p = figure(x_range=route_ids, #y_range=(-20e6, 25e6), 
                plot_height=350, plot_width=600, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Costs and Benefits of Mass Transit Level of Service Intervention by bus route", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Distribution of costs and benefits of Mass Transit Agencies "
+                   "by bus route", text_font_style="normal"), 'above')
+    p.add_layout(Title(text="Transit costs and benefits", text_font_size="14pt"), 'above')
 
     p.circle(0, 0, size=0.00000001, color="#ffffff", legend='Costs and Benefits')
 
@@ -855,8 +910,12 @@ def plot_transit_inc_by_mode(source, sub_key=1, savefig='None'):
     p = figure(x_range=HOURS, #y_range=(0, 35000), 
                plot_height=350, plot_width=600, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
-    p.add_layout(Title(text="Total incentives distributed by time of day per mode", text_font_size="14pt"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="Total incentives distributed per mode by hours of "
+                   "the day", text_font_style="normal"), 'above')
+    p.add_layout(Title(text="Mode Incentives", text_font_size="14pt"), 'above')
+
 
     ride_modes = set(['walk_transit', 'drive_transit', 'ride_hail'])
     nbins = len(ride_modes)
@@ -894,7 +953,7 @@ def plot_transit_inc_by_mode(source, sub_key=1, savefig='None'):
 
 def plot_toll_revenue_by_time(source, sub_key=1, savefig='None'):
     p = figure(x_range=HOURS, plot_height=350, toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(Title(text="Toll Revenue per hour", text_font_size="14pt"), 'above')
 
     p.vbar(x='Hour', top='Toll', source=source, width=0.85)
@@ -917,7 +976,7 @@ def plot_sustainability_25pm_per_mode(source, sub_key=1, savefig='None'):
     p = figure(x_range=modes, #y_range=(0, 2500), 
                plot_height=350, 
                toolbar_location=None, tools="")
-    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'above')
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(Title(text="Daily PM2.5 emissions per mode", text_font_size="14pt"), 'above')
 
     p.vbar(x='modes', top='emissions', color='color', source=source, width=0.8)
@@ -933,6 +992,29 @@ def plot_sustainability_25pm_per_mode(source, sub_key=1, savefig='None'):
       export_png(p, filename="figures/{}/outputs/sustainability_25pm_per_mode.png".format(sub_key))
 
     return p
+
+def plot_sustainability_ghg_per_mode(source, sub_key=1, savefig='None'):
+    modes = ['ride_hail', 'car', 'bus']
+    p = figure(x_range=modes, #y_range=(0, 2500), 
+               plot_height=350, 
+               toolbar_location=None, tools="")
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(Title(text="Daily CO2 emissions per mode", text_font_size="14pt"), 'above')
+
+    p.vbar(x='modes', top='emissions', color='color', source=source, width=0.8)
+    
+    p.xaxis.axis_label = 'Mode'
+    p.yaxis.axis_label = 'CO2 [g]'
+    p.xaxis.major_label_orientation = math.pi / 6
+    
+    if savefig == 'svg':
+      p.output_backend = "svg"
+      export_svgs(p, filename="figures/{}/outputs/sustainability_ghg_per_mode.svg".format(sub_key))
+    elif savefig == 'png':
+      export_png(p, filename="figures/{}/outputs/sustainability_ghg_per_mode.png".format(sub_key))
+
+    return p
+
 
 def find_submissions():
 
@@ -1111,9 +1193,9 @@ for sub_order, sub_key in \
         route_ids=submission.route_ids)
     plots[sub_order]['modeinc_input'] = plot_modeinc_input(
         source=sources['modeinc_input_source'], sub_key=sub_key)
-    plots[sub_order]['tollcircle'] = plot_tollcircle(
+    plots[sub_order]['toll_circle'] = plot_toll_circle(
         link_source=sources['link_source'],
-        circle_source=sources['tollcircle_source'],  sub_key=sub_key)
+        circle_source=sources['toll_circle_source'],  sub_key=sub_key)
     plots[sub_order]['mode_planned_pie_chart'] = plot_mode_pie_chart(
         source=sources['mode_planned_pie_chart_source'],
         choice_type='planned', sub_key=sub_key)
@@ -1180,6 +1262,10 @@ for sub_order, sub_key in \
         plot_sustainability_25pm_per_mode(
             source=sources['sustainability_25pm_per_mode_source'],
             sub_key=sub_key)
+    plots[sub_order]['sustainability_ghg_per_mode'] = \
+        plot_sustainability_ghg_per_mode(
+            source=sources['sustainability_ghg_per_mode_source'],
+            sub_key=sub_key)
 ##############################################
 
 ### Gather plot objects into lists ###
@@ -1218,9 +1304,12 @@ submission_outputs_transitcb_plots = [
 ]
 submission_outputs_toll_plots = [
     'toll_revenue_by_time',
-    'tollcircle'
+    'toll_circle'
 ]
-submission_outputs_sustainability_plots = ['sustainability_25pm_per_mode']
+submission_outputs_sustainability_plots = [
+'sustainability_25pm_per_mode',
+'sustainability_ghg_per_mode'
+]
 
 ######################################
 sub_orders = ['submission1','submission2']
@@ -1284,16 +1373,17 @@ def update_submission(submission_sources, sub_order):
                 getattr(submission, data_name)
 
         # change the title of plot based on different layout
-        for key in plots[sub_order].keys():
-            if key == 'fares_input':
-                plots[sub_order][key].children[0].above[0].text = submission_key
-            elif key == 'modeinc_input':
-                plots[sub_order][key].children[0].children[0]\
-                    .above[0].text = submission_key
-                plots[sub_order][key].children[0].children[1]\
-                    .above[0].text = submission_key
+        for plot_name in plots[sub_order].keys():
+            if plot_name == 'fares_input':
+                plots[sub_order][plot_name].children[0].below[1].text = submission_key
+            elif plot_name == 'modeinc_input':
+                plots[sub_order][plot_name].children[0].children[0]\
+                    .below[1].text = submission_key
+                plots[sub_order][plot_name].children[0].children[1]\
+                    .below[1].text = submission_key
             else:
-                plots[sub_order][key].above[0].text = submission_key
+                plots[sub_order][plot_name].below[1].text = submission_key
+            #save_png(plots[sub_order][plot_name], submission_key, plot_name)
             #Title(text=submission_key, text_font_style="italic")
 
     return update_sub_order

@@ -47,14 +47,31 @@ def merc(lat, lon):
 class Submission():
 
     links = dict()
+    activities = dict()
 
     @classmethod
     def load_links(cls, db, scenario):
+        """
+        cache all links as a class variable because all simulations for the
+        same scenario share the same links
+        """
         if scenario in cls.links:
             return cls.links[scenario]
         else:
             cls.links[scenario] = db.load_links(scenario)
             return cls.links[scenario]
+
+    @classmethod
+    def load_activities(cls, db, scenario):
+        """
+        cache all links as a class variable because all simulations for the
+        same scenario share the same links
+        """
+        if scenario in cls.activities:
+            return cls.activities[scenario]
+        else:
+            cls.activities[scenario] = db.load_activities(scenario)
+            return cls.activities[scenario]
 
     def __init__(self, name, scenario, simulation_ids=None):
         """
@@ -100,7 +117,7 @@ class Submission():
             self.fares_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/MassTransitFares.csv'))
             self.incentives_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/ModeIncentives.csv'))
             self.fleet_df = pd.read_csv(join(self.submissions_dir, 'competition/submission-inputs/VehicleFleetMix.csv'))
-            self.tollcircle_df = None
+            self.toll_circle_df = None
             self.scores_df = pd.read_csv(join(self.submissions_dir, 'competition/submissionScores.csv'))
 
             self.activities_df = pd.read_csv(join(self.submissions_dir, 'activities_dataframe.csv'))
@@ -137,7 +154,7 @@ class Submission():
             self.incentives_df = db.load_incentives(self.simulation_ids[0])
             self.fleet_df = db.load_fleet(self.simulation_ids[0])
             self.scores_df = db.load_scores(self.simulation_ids)
-            self.activities_df = None
+            self.activities_df = self.load_activities(db, self.scenario)
             self.households_df = None
             self.legs_df = db.load_legs(self.simulation_ids)
             self.paths_df = db.load_paths(self.simulation_ids, self.scenario)
@@ -146,7 +163,7 @@ class Submission():
             self.mode_choice_df = db.load_mode_choice(self.simulation_ids)
             self.realized_mode_choice_df = db.load_mode_choice(
                 self.simulation_ids, realized=True)
-            self.tollcircle_df = db.load_tollcircle(self.simulation_ids[0])
+            self.toll_circle_df = db.load_toll_circle(self.simulation_ids[0])
             self.mode_choice_hourly_df = db.load_hourly_mode_choice(
                 self.simulation_ids)
 
@@ -183,7 +200,7 @@ class Submission():
         (self.routesched_input_line_data, self.routesched_input_start_data,
          self.routesched_input_end_data) = self.make_routesched_input_data()
         self.link_data = self.make_link_data()
-        self.tollcircle_data = self.make_tollcircle_data()
+        self.toll_circle_data = self.make_toll_circle_data()
         self.normalized_scores_data = self.make_normalized_scores_data()
 
         self.mode_planned_pie_chart_data = self.make_mode_pie_chart_data(
@@ -224,6 +241,8 @@ class Submission():
         
         self.sustainability_25pm_per_mode_data = \
             self.make_sustainability_25pm_per_mode_data()
+        self.sustainability_ghg_per_mode_data = \
+            self.make_sustainability_ghg_per_mode_data()
         self.data_source_made = True
 
     def splitting_min_max(self, df, name_column):
@@ -411,7 +430,7 @@ class Submission():
         data = links[['from_x','from_y','to_x','to_y']].to_dict(orient='list')
         return data
 
-    def make_tollcircle_data(self):
+    def make_toll_circle_data(self):
         if 'sioux_faux' in self.scenario:
             x_lim = [-10776977, -10759011]
             y_lim = [5388501, 5406742]
@@ -427,20 +446,20 @@ class Submission():
         data['radius'] = 0
         data['text'] = ''
 
-        if self.tollcircle_df is None or len(self.tollcircle_df) == 0:
+        if self.toll_circle_df is None or len(self.toll_circle_df) == 0:
             return pd.DataFrame(data, index=[0]).to_dict(orient='list')
 
-        center_x, center_y = merc(self.tollcircle_df['center_lat'][0],
-                                  self.tollcircle_df['center_lon'][0])
-        border_x, border_y = merc(self.tollcircle_df['border_lat'][0],
-                                  self.tollcircle_df['border_lon'][0])
+        center_x, center_y = merc(self.toll_circle_df['center_lat'][0],
+                                  self.toll_circle_df['center_lon'][0])
+        border_x, border_y = merc(self.toll_circle_df['border_lat'][0],
+                                  self.toll_circle_df['border_lon'][0])
         radius = np.linalg.norm([center_x-border_x, center_y-border_y])
 
         data['center_x'] = center_x
         data['center_y'] = center_y
         data['radius'] = radius
-        toll = self.tollcircle_df['toll'][0]
-        unit = '[$/mile]' if  self.tollcircle_df['type'][0] == 'permile' else '[$]'
+        toll = self.toll_circle_df['toll'][0]
+        unit = '[$/mile]' if  self.toll_circle_df['type'][0] == 'permile' else '[$]'
         data['text'] = f"{toll:.2f} " + unit
         return pd.DataFrame(data, index=[0]).to_dict(orient='list')
 
@@ -1113,22 +1132,24 @@ class Submission():
         return data 
 
     def make_toll_revenue_by_time_data(self):
-        columns = ["Start_time", "Toll"]
-        legs = self.legs_df.copy()[columns]
+        trip_columns = ["Start_time", "Toll", "PID", "DestinationAct"]
+        trips = self.trips_df.copy()[trip_columns]
+        #act_columns = ["PID", "ActNum", "Type"]
+        #acts = self.activities_df.copy()[act_columns]
 
         hours = range(25)
         seconds = [hour*3600 for hour in hours]
 
-        legs['Hour'] = pd.cut(
-            legs['Start_time'],
+        trips['Hour'] = pd.cut(
+            trips['Start_time'],
             bins=seconds,
             labels=[str(h) for h in hours[:-1]]
         )
 
-        legs = legs[['Toll','Hour']].groupby('Hour').sum()
-        legs = legs.reset_index()
+        trips = trips[['Toll','Hour']].groupby('Hour').sum()
+        trips = trips.reset_index()
 
-        return legs.to_dict(orient='list')
+        return trips.to_dict(orient='list')
 
     def make_sustainability_25pm_per_mode_data(self):
         
@@ -1145,6 +1166,38 @@ class Submission():
         emissions_car = round(
             self.legs_df[self.legs_df["Mode"] == "car"]["Distance_m"].apply(
                 lambda x: x * 0.000621371 * 0.001716086).sum(), 0) / self.simulation_count
+
+        emissions = pd.DataFrame(
+            {"bus": [emissions_bus], "car": [emissions_car],
+             "ride_hail": [emissions_on_demand]})
+
+        modes = ['ride_hail', 'car', 'bus']
+        emissions = pd.melt(emissions, value_vars=modes)
+
+        # max_emissions = emissions['value'].max() * 1.1
+        
+        palette = Dark2[len(modes)]
+        data=dict(
+            modes=modes,
+            emissions=[emissions_on_demand, emissions_car, emissions_bus],
+            color=palette)
+        return data
+
+    def make_sustainability_ghg_per_mode_data(self):
+        
+        columns = ["vehicle", "mode", "length", "departureTime"]
+        vmt = self.paths_df.copy()[columns]
+
+        # emissions for each mode
+        emissions_bus = round(
+            vmt[vmt["mode"] == "bus"]["length"].apply(
+                lambda x: x * 0.000621371 * 13718.04/2.75).sum(), 0) / self.simulation_count
+        emissions_on_demand = round(
+            vmt[vmt["vehicle"].str.contains("rideHailVehicle")]["length"].apply(
+                lambda x: x * 0.000621371 * 11405.84/25).sum(), 0) / self.simulation_count
+        emissions_car = round(
+            self.legs_df[self.legs_df["Mode"] == "car"]["Distance_m"].apply(
+                lambda x: x * 0.000621371 * 11405.84/25).sum(), 0) / self.simulation_count
 
         emissions = pd.DataFrame(
             {"bus": [emissions_bus], "car": [emissions_car],

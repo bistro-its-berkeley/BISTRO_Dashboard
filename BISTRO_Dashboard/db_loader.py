@@ -192,7 +192,7 @@ class BistroDB(object):
 
         return df[['agencyId','routeId','vehicleTypeId']]
 
-    def load_tollcircle(self, simulation_id):
+    def load_toll_circle(self, simulation_id):
         db_cols = ['type', 'toll', 'center_lat', 'center_lon', 'border_lat',
                    'border_lon']
         data = self.get_table(
@@ -232,7 +232,17 @@ class BistroDB(object):
         return df
 
     def load_activities(self, scenario):
-        pass
+        db_cols = ['person_id', 'activity_num', 'activity_type']
+
+        data = self.get_table(
+            'activity', cols=db_cols,
+            condition="WHERE scenario = '{}'".format(scenario))
+
+        df = pd.DataFrame(
+            data,
+            columns=['PID', 'ActNum', 'Type']
+            )
+        return df
 
     def load_household(self, scenario):
         pass
@@ -316,7 +326,7 @@ class BistroDB(object):
         # pid realizedmode distance trip_num Duration_sec(end - begin) fuel_cost fare incentive
         db_cols = ['person_id', 'realized_mode', 'distance', 'trip_num',
                    'trip_start', 'trip_end', 'fuel_cost', 'fare', 'toll',
-                   'incentives']
+                   'incentives', 'dest_act']
         if len(simulation_ids) > 1:
             data = self.get_table(
                 'trip', cols=db_cols,
@@ -329,7 +339,11 @@ class BistroDB(object):
                 condition="WHERE run_id = UUID_TO_BIN('{}')".format(
                     simulation_ids[0]))
 
-        df = pd.DataFrame(data, columns=['PID', 'realizedTripMode', 'Distance_m', 'Trip_ID', 'Start_time', 'End_time', 'FuelCost', 'Fare', 'Toll', 'Incentive'])
+        df = pd.DataFrame(
+            data,
+            columns=['PID', 'realizedTripMode', 'Distance_m', 'Trip_ID',
+                     'Start_time', 'End_time', 'FuelCost', 'Fare', 'Toll',
+                     'Incentive', 'DestinationAct'])
         df['Duration_sec'] = df['End_time'] - df['Start_time']
 
         return df
