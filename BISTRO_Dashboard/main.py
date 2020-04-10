@@ -859,7 +859,7 @@ def plot_los_crowding(source, sub_key=1, savefig='None', route_ids=[]):
 
 def plot_transit_cb(costs_source, benefits_source, sub_key=1, savefig='None', route_ids=[]):
 
-    costs_labels = ["OperationalCosts", "FuelCost"]
+    costs_labels = ["OperationalCosts", "fuelCost"]
     benefits_label = ["Fare"]
     p = figure(x_range=route_ids, #y_range=(-20e6, 25e6), 
                plot_height=350, plot_width=600, 

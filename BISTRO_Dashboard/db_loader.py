@@ -264,7 +264,7 @@ class BistroDB(object):
 
         df = pd.DataFrame(
             data,
-            columns=['Distance_m','Mode','Veh','Start_time','Fare','FuelCost','Toll'])
+            columns=['Distance_m','Mode','Veh','Start_time','Fare','fuelCost','Toll'])
         return df
 
     def load_vehicles(self, scenario):
@@ -289,10 +289,10 @@ class BistroDB(object):
         return df
 
     def load_paths(self, simulation_ids, scenario):
-        # mode length vehicle "numPassengers", "vehicleType", "departureTime", "arrivalTime" FuelCost
+        # mode length vehicle "numPassengers", "vehicleType", "departureTime", "arrivalTime" fuelCost
 
         db_cols = ['vehicle_id','distance','mode','start_time','end_time',
-                   'num_passengers','fuel_cost']
+                   'num_passengers','fuel_cost','fuel_consumed']
         if len(simulation_ids) > 1:
             data = self.get_table(
                 'pathtraversal', cols=db_cols,
@@ -308,7 +308,7 @@ class BistroDB(object):
         path_df = pd.DataFrame(
             data,
             columns=['vehicle','length','mode','departureTime','arrivalTime',
-                     'numPassengers','FuelCost'])
+                     'numPassengers','fuelCost','fuelConsumed'])
 
         vehicle_df = self.load_vehicles(scenario)
         return path_df.merge(vehicle_df, left_on='vehicle', right_on='vehicle')
@@ -342,7 +342,7 @@ class BistroDB(object):
         df = pd.DataFrame(
             data,
             columns=['PID', 'realizedTripMode', 'Distance_m', 'Trip_ID',
-                     'Start_time', 'End_time', 'FuelCost', 'Fare', 'Toll',
+                     'Start_time', 'End_time', 'fuelCost', 'Fare', 'Toll',
                      'Incentive', 'DestinationAct'])
         df['Duration_sec'] = df['End_time'] - df['Start_time']
 
