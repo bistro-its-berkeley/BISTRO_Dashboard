@@ -1,13 +1,11 @@
-import pdb
-
 import glob
 import math
 from collections import defaultdict
 from os import listdir, makedirs
 from os.path import dirname, isdir, join
+
 import pandas as pd
 import yaml
-
 from bokeh.core.properties import value
 from bokeh.io import curdoc, show, output_file, export_png, export_svgs
 from bokeh.layouts import row, column, gridplot, layout, widgetbox
@@ -22,6 +20,7 @@ from bokeh.palettes import Dark2, Category10, Category20, Plasma256, YlOrRd
 from bokeh.plotting import figure, show
 from bokeh.transform import dodge, transform
 from bokeh.tile_providers import CARTODBPOSITRON
+from natsort import natsorted
 
 from submission import Submission
 from db_loader import BistroDB, parse_credential
@@ -1084,11 +1083,11 @@ submissions = []
 submission_dict = {}
 submission_summary = {}
 for _, simulation in simulations.iterrows():
-    simulation_id, datetime, scenario, name = (
+    simulation_id, datetime, scenario, name, tag = (
         simulation['simulation_id'], str(simulation['datetime']),
-        simulation['scenario'], simulation['name'])
-    submissions.append(scenario+'/'+name+'@'+datetime)
-    submission_name = name+'@'+datetime
+        simulation['scenario'], simulation['name'], simulation['tag'])
+    submission_name = tag + '(' + name + ')' if tag is not None else name
+    submissions.append(submission_name)
     submission = Submission(
         name=submission_name, scenario=scenario, simulation_ids=[simulation_id])
 
@@ -1110,6 +1109,7 @@ for _, simulation in simulations.iterrows():
     else:
         submission_dict[scenario]['submissions'][submission_name] = submission
 
+submissions = natsorted(submissions, key=lambda y: y.lower())
 # for summary_name in submission_summary.keys():
 #     scenario=submission_summary[summary_name]['scenario']
 #     submission = Submission(
@@ -1345,10 +1345,10 @@ outputs_sustainability_plots = row(
 
 submission1_select = Select(value='{}/{}'.format(scenario_key, submission1_key),
                      title='Submission 1', 
-                     options=sorted(submissions))
+                     options=submissions)
 submission2_select = Select(value='{}/{}'.format(scenario_key, submission2_key),
                      title='Submission 2', 
-                     options=sorted(submissions))
+                     options=submissions)
 
 pulldowns = row(submission1_select, submission2_select)
 

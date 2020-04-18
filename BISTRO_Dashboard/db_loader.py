@@ -102,12 +102,13 @@ class BistroDB(object):
 
     def load_simulation_df(self):
         data = self.query("""
-            SELECT BIN_TO_UUID(`run_id`), `datetime`, `scenario`, `name`
+            SELECT BIN_TO_UUID(simulationrun.run_id), simulationrun.datetime,simulationrun.scenario, simulationrun.name, simulationtag.tag
             FROM simulationrun
-            WHERE scenario = 'sioux_faux-15k'
+            LEFT JOIN simulationtag ON simulationtag.name = simulationrun.name
+            WHERE simulationrun.scenario = 'sioux_faux-15k'
             """)
         return pd.DataFrame(
-            data, columns=['simulation_id','datetime','scenario', 'name'])
+            data, columns=['simulation_id','datetime','scenario', 'name', 'tag'])
 
     def load_links(self, scenario):
         data = self.query("""
