@@ -85,9 +85,9 @@ def save_png(plot, sub_key, name):
     export_png(plot, filename=f_name)
 
 def plot_normalized_scores(source, sub_key=1, savefig='None'):
-    
-    p = figure(#x_range=(-6, 2), 
-               y_range=CATEGORIES[::-1], 
+
+    p = figure(#x_range=(-6, 2),
+               y_range=CATEGORIES[::-1],
                plot_height=350, plot_width=1200,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -99,11 +99,11 @@ def plot_normalized_scores(source, sub_key=1, savefig='None'):
               text_font_size="14pt"),
         'above')
 
-    p.hbar(y='Component Name', height=0.5, 
+    p.hbar(y='Component Name', height=0.5,
            left=0,
            right='Weighted Score',
            source=source,
-           color='color') 
+           color='color')
 
     p.xgrid.grid_line_color = None
     p.ygrid.grid_line_color = None
@@ -123,6 +123,47 @@ def plot_normalized_scores(source, sub_key=1, savefig='None'):
       export_png(p, filename="figures/{}/normalized_scores.png".format(sub_key))
 
     return p
+
+def plot_casestudy_scores(source, sub_key=1, savefig='None'):
+
+    p = figure(#x_range=(-6, 2),
+               y_range=CASESTUDY_CAT[::-1],
+               plot_height=350, plot_width=1200,
+               toolbar_location=None, tools="")
+    p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
+    p.add_layout(
+        Title(text="KPI score and aggregation for Sioux Faux",
+              text_font_style="normal"), 'above')
+    p.add_layout(
+        Title(text="Case Study Scores",
+              text_font_size="14pt"),
+        'above')
+
+    p.hbar(y='Component Name', height=0.5,
+           left=0,
+           right='Weighted Score',
+           source=source,
+           color='color')
+
+    p.xgrid.grid_line_color = None
+    p.ygrid.grid_line_color = None
+    p.outline_line_width = 1
+    p.outline_line_color = "black"
+    p.xaxis.axis_label = 'Weighted Score'
+    p.yaxis.axis_label = 'Score Component'
+    p.xaxis.axis_label_text_font_size = "12pt"
+    p.yaxis.axis_label_text_font_size = "12pt"
+    p.xaxis.major_label_text_font_size = "10pt"
+    p.yaxis.major_label_text_font_size = "10pt"
+
+    if savefig == 'svg':
+      p.output_backend = "svg"
+      export_svgs(p, filename="figures/{}/casestudy_scores.svg".format(sub_key))
+    elif savefig == 'png':
+      export_png(p, filename="figures/{}/casestudy_scores.png".format(sub_key))
+
+    return p
+
 
 def plot_fleetmix_input(source, sub_key=1, savefig='None', route_ids=[]):
 
@@ -358,9 +399,7 @@ def plot_mode_pie_chart(source, choice_type='planned', sub_key=1, savefig='None'
     return p
 
 def plot_mode_choice_by_time(source, sub_key=1, savefig='None'):
-
-
-    p = figure(x_range=HOURS,# y_range=(0, 8000), 
+    p = figure(x_range=HOURS, y_range=(0, 15000),
                plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -398,7 +437,7 @@ def plot_mode_choice_by_income_group(source, sub_key=1, savefig='None'):
 
     bins = ['[$0, $10k)', '[$10k, $25k)', '[$25k, $50k)', '[$50k, $75k)', '[$75k, $100k)', '[$100k, inf)']
 
-    p = figure(x_range=MODES, #y_range=(0, 9000), 
+    p = figure(x_range=MODES, y_range=(0, 15000),
                plot_height=350,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -442,7 +481,7 @@ def plot_mode_choice_by_age_group(source, sub_key=1, savefig='None'):
     edges = [0, 18, 30, 40, 50, 60, float('inf')]
     bins = ['[{}, {})'.format(edges[i], edges[i+1]) for i in range(len(edges)-1)]
 
-    p = figure(x_range=MODES, #y_range=(0, 6000), 
+    p = figure(x_range=MODES, y_range=(0, 8000),
                plot_height=350,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -486,7 +525,7 @@ def plot_mode_choice_by_distance(source, sub_key=1, savefig='None'):
     edges = [0, .5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 7.5, 10, 40]
     bins = ['[{}, {})'.format(edges[i], edges[i+1]) for i in range(len(edges)-1)]
 
-    p = figure(x_range=bins, #y_range=(0, 6000), 
+    p = figure(x_range=bins, y_range=(0, 6000),
                plot_height=350, 
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -522,8 +561,8 @@ def plot_mode_choice_by_distance(source, sub_key=1, savefig='None'):
 
 def plot_congestion_travel_time_by_mode(source, sub_key=1, savefig='None'):
 
-    p = figure(x_range=MODES, #y_range=(0, 60),
-               plot_height=350, plot_width=700, 
+    p = figure(x_range=MODES, y_range=(0, 80),
+               plot_height=350, plot_width=700,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(
@@ -546,8 +585,8 @@ def plot_congestion_travel_time_by_mode(source, sub_key=1, savefig='None'):
 
 def plot_congestion_travel_time_per_passenger_trip(source, sub_key=1, savefig='None'):
 
-    p = figure(x_range=HOURS, #y_range=(0, 350), 
-               plot_height=350, plot_width=800, 
+    p = figure(x_range=HOURS, y_range=(0, 360),
+               plot_height=350, plot_width=800,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(
@@ -582,8 +621,8 @@ def plot_congestion_travel_time_per_passenger_trip(source, sub_key=1, savefig='N
 
 def plot_congestion_miles_traveled_per_mode(source, sub_key=1, savefig='None'):
 
-    p = figure(x_range=['ride_hail', 'car', 'walk', 'bus'], #y_range=(0, 90000), 
-               plot_height=350, plot_width=600, 
+    p = figure(x_range=['ride_hail', 'car', 'walk', 'bus'], y_range=(0, 90000),
+               plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(
@@ -613,7 +652,7 @@ def plot_congestion_miles_traveled_per_mode(source, sub_key=1, savefig='None'):
     return p
 
 def plot_congestion_car_vmt_by_time(source, sub_key=1, savefig='None'):
-    p = figure(x_range=HOURS,
+    p = figure(x_range=HOURS, y_range=(0, 12000),
                plot_height=350, plot_width=700,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -644,8 +683,8 @@ def plot_congestion_bus_vmt_by_ridership(source, sub_key=1, savefig='None'):
         'high ridership\n(< 50% standing capacity)',
         'crowded\n(<= standing capacity)'
     ]
-    p = figure(x_range=HOURS, #y_range=(0, 1200000), 
-               plot_height=350, plot_width=600, 
+    p = figure(x_range=HOURS, y_range=(0, 250),
+               plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(
@@ -692,8 +731,8 @@ def plot_congestion_bus_vmt_by_ridership(source, sub_key=1, savefig='None'):
 def plot_congestion_on_demand_vmt_by_phases(source, sub_key=1, savefig='None'):
 
     driving_states = ["fetch", "fare"]
-    p = figure(x_range=HOURS, #y_range=(0, 2500000), 
-               plot_height=350, plot_width=700, 
+    p = figure(x_range=HOURS, y_range=(0, 18),
+               plot_height=350, plot_width=700,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(
@@ -731,8 +770,8 @@ def plot_congestion_travel_speed(source, sub_key=1, savefig='None'):
     edges = [6, 8, 10, 12, 14, 16, 18, 20, 22, 24]
     bins = ['[{}, {})'.format(edges[i], edges[i+1]) for i in range(len(edges)-1)]
 
-    p = figure(x_range=bins, #y_range=(0, 12), 
-               plot_height=350, plot_width=700, 
+    p = figure(x_range=bins, y_range=(0, 15),
+               plot_height=350, plot_width=700,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(
@@ -772,8 +811,8 @@ def plot_congestion_travel_speed(source, sub_key=1, savefig='None'):
 
 def plot_los_travel_expenditure(source, sub_key=1, savefig='None'):
 
-    p = figure(x_range=HOURS, #y_range=(0, 6.0), 
-               plot_height=350, plot_width=600, 
+    p = figure(x_range=HOURS, y_range=(0, 15.0),
+               plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(
@@ -817,8 +856,8 @@ def plot_los_crowding(source, sub_key=1, savefig='None', route_ids=[]):
 
     # AM peak = 7am-10am, PM Peak = 5pm-8pm, Early Morning, Midday, Late Evening = in between
     labels = ["Early Morning (12a-7a)", "AM Peak (7a-10a)", "Midday (10a-5p)", "PM Peak (5p-8p)", "Late Evening (8p-12a)"]
-    p = figure(x_range=route_ids, #y_range=(0, 15), 
-               plot_height=350, plot_width=600, 
+    p = figure(x_range=route_ids, y_range=(0, 10),
+               plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(
@@ -860,8 +899,8 @@ def plot_transit_cb(costs_source, benefits_source, sub_key=1, savefig='None', ro
 
     costs_labels = ["OperationalCosts", "fuelCost"]
     benefits_label = ["Fare"]
-    p = figure(x_range=route_ids, #y_range=(-20e6, 25e6), 
-               plot_height=350, plot_width=600, 
+    p = figure(x_range=route_ids, y_range=(-2.5e6, 2.5e6),
+               plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(
@@ -906,8 +945,8 @@ def plot_transit_cb(costs_source, benefits_source, sub_key=1, savefig='None', ro
 
 def plot_transit_inc_by_mode(source, sub_key=1, savefig='None'):
 
-    p = figure(x_range=HOURS, #y_range=(0, 35000), 
-               plot_height=350, plot_width=600, 
+    p = figure(x_range=HOURS, #y_range=(0, 35000),
+               plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(
@@ -951,7 +990,8 @@ def plot_transit_inc_by_mode(source, sub_key=1, savefig='None'):
 
 
 def plot_toll_revenue_by_time(source, sub_key=1, savefig='None'):
-    p = figure(x_range=HOURS, plot_height=350, toolbar_location=None, tools="")
+    p = figure(x_range=HOURS, y_range=(0,40000), plot_height=350,
+               toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(Title(text="Toll Revenue per hour", text_font_size="14pt"), 'above')
 
@@ -972,8 +1012,8 @@ def plot_toll_revenue_by_time(source, sub_key=1, savefig='None'):
 def plot_sustainability_25pm_per_mode(source, sub_key=1, savefig='None'):
  
     modes = ['ride_hail', 'car', 'bus']
-    p = figure(x_range=modes, #y_range=(0, 2500), 
-               plot_height=350, 
+    p = figure(x_range=modes, y_range=(0, 70),
+               plot_height=350,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(Title(text="Daily PM2.5 emissions per mode", text_font_size="14pt"), 'above')
@@ -994,8 +1034,8 @@ def plot_sustainability_25pm_per_mode(source, sub_key=1, savefig='None'):
 
 def plot_sustainability_ghg_per_mode(source, sub_key=1, savefig='None'):
     modes = ['ride_hail', 'car', 'bus']
-    p = figure(x_range=modes, #y_range=(0, 2500), 
-               plot_height=350, 
+    p = figure(x_range=modes, y_range=(0, 16000000),
+               plot_height=350,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
     p.add_layout(Title(text="Daily CO2 emissions per mode", text_font_size="14pt"), 'above')
@@ -1087,7 +1127,7 @@ for _, simulation in simulations.iterrows():
         simulation['simulation_id'], str(simulation['datetime']),
         simulation['scenario'], simulation['name'], simulation['tag'])
     submission_name = tag + '(' + name + ')' if tag is not None else name
-    submissions.append(submission_name)
+    submissions.append(scenario + '/' +submission_name)
     submission = Submission(
         name=submission_name, scenario=scenario, simulation_ids=[simulation_id])
 
@@ -1142,6 +1182,8 @@ else:
     scenario_key = sorted(list(submission_dict.keys()))[0]
 
 CATEGORIES = submission_dict[scenario_key]['categories']
+CASESTUDY_CAT = yaml.safe_load(
+    open(join(dirname(__file__), 'casestudy_kpis.yaml')))
 
 if 'warm-start' in submission_dict[scenario_key]['submissions']:
     submission1_key = 'warm-start'
@@ -1179,6 +1221,8 @@ for sub_order, sub_key in \
     sources = submission_sources[sub_order]
     submission = submission_dict[scenario_key]['submissions'][sub_key]
     plots[sub_order]['normalized_scores'] = plot_normalized_scores(
+        source=sources['normalized_scores_source'], sub_key=sub_key)
+    plots[sub_order]['casestudy_scores'] = plot_casestudy_scores(
         source=sources['normalized_scores_source'], sub_key=sub_key)
     plots[sub_order]['fleetmix_input'] = plot_fleetmix_input(
         source=sources['fleetmix_input_source'], sub_key=sub_key,
@@ -1276,7 +1320,7 @@ submission_inputs_plots = [
     'fares_input',
     'modeinc_input'
 ]
-submission_scores_plots = ['normalized_scores']
+submission_scores_plots = ['normalized_scores', 'casestudy_scores']
 submission_outputs_mode_plots = [
     'mode_planned_pie_chart',
     'mode_realized_pie_chart',
@@ -1322,8 +1366,8 @@ inputs_plots = row(
     *[column([plots[sub_order][p] for p in submission_inputs_plots])
     for sub_order in sub_orders])
 scores_plots = column(
-    *[column([plots[sub_order][p] for p in submission_scores_plots])
-    for sub_order in sub_orders])
+    *[column([plots[sub_order][p] for sub_order in sub_orders])
+    for p in submission_scores_plots])
 outputs_mode_plots = row(
     *[column([plots[sub_order][p] for p in submission_outputs_mode_plots])
     for sub_order in sub_orders])

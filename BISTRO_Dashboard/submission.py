@@ -277,6 +277,31 @@ class Submission():
     def make_normalized_scores_data(self):
         scores = self.scores_df
         scores = scores.loc[:,["Component Name", "Weighted Score"]]
+
+        # PM 2.5 score is not being generated properly from BEAM.
+        congestion_avg = scores[
+            scores["Component Name"].isin(
+                [#'Sustainability: Total grams PM 2.5 Emitted',
+                 'Sustainability: Total grams GHGe Emissions',
+                 'Congestion: average vehicle delay per passenger trip',
+                 'Congestion: total vehicle miles traveled'])
+        ]['Weighted Score'].mean()
+        social_avg = scores[
+            scores["Component Name"].isin(
+                ['Equity: average travel cost burden -  secondary',
+                 'Equity: average travel cost burden - work'])
+        ]['Weighted Score'].mean()
+        TR = float(scores[scores["Component Name"]=='Toll Revenue']['Weighted Score'])
+        aggregate = 0.4*social_avg+0.4*TR+0.2*congestion_avg
+
+        agg_scores = pd.DataFrame({
+            "Component Name":["Congestion: Average Score",
+                              "Social: Average Score",
+                              "Aggregate Score"],
+            "Weighted Score":[congestion_avg, social_avg, aggregate]})
+
+        scores = scores.append(agg_scores, ignore_index = True)
+
         scores.set_index("Component Name", inplace=True)
         scores.reset_index(inplace=True)
 
@@ -286,6 +311,25 @@ class Submission():
 
         scores.loc[:, 'color'] = "#4682b4"
         scores.loc[scores["Component Name"] == 'Submission Score', 'color'] = "#000080"
+
+        # min_score = min(scores['Weighted Score'].min(), 0.0) * 1.1
+        # max_score = max(scores['Weighted Score'].max(), 1.0) * 1.1
+
+        data = scores.to_dict(orient='list')
+        return data
+
+    def make_case_study_scores_data(self):
+        scores = self.scores_df
+        scores = scores.loc[:,["Component Name", "Weighted Score"]]
+        scores.set_index("Component Name", inplace=True)
+        scores.reset_index(inplace=True)
+
+        scores.loc[:, "Component Name"] = scores["Component Name"].astype('category')#.cat.reorder_categories(CATEGORIES)
+
+        scores = scores.sort_values(by="Component Name")
+
+        scores.loc[:, 'color'] = "#4682b4"
+        #scores.loc[scores["Component Name"] == 'Submission Score', 'color'] = "#000080"
 
         # min_score = min(scores['Weighted Score'].min(), 0.0) * 1.1
         # max_score = max(scores['Weighted Score'].max(), 1.0) * 1.1
