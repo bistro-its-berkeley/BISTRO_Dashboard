@@ -652,7 +652,7 @@ def plot_congestion_miles_traveled_per_mode(source, sub_key=1, savefig='None'):
     return p
 
 def plot_congestion_car_vmt_by_time(source, sub_key=1, savefig='None'):
-    p = figure(x_range=HOURS, y_range=(0, 12000),
+    p = figure(x_range=HOURS, y_range=(0, 25000),
                plot_height=350, plot_width=700,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -731,7 +731,7 @@ def plot_congestion_bus_vmt_by_ridership(source, sub_key=1, savefig='None'):
 def plot_congestion_on_demand_vmt_by_phases(source, sub_key=1, savefig='None'):
 
     driving_states = ["fetch", "fare"]
-    p = figure(x_range=HOURS, y_range=(0, 18),
+    p = figure(x_range=HOURS, y_range=(0, 300),
                plot_height=350, plot_width=700,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -811,7 +811,7 @@ def plot_congestion_travel_speed(source, sub_key=1, savefig='None'):
 
 def plot_los_travel_expenditure(source, sub_key=1, savefig='None'):
 
-    p = figure(x_range=HOURS, y_range=(0, 15.0),
+    p = figure(x_range=HOURS, y_range=(0, 25.0),
                plot_height=350, plot_width=600,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -1012,7 +1012,7 @@ def plot_toll_revenue_by_time(source, sub_key=1, savefig='None'):
 def plot_sustainability_25pm_per_mode(source, sub_key=1, savefig='None'):
  
     modes = ['ride_hail', 'car', 'bus']
-    p = figure(x_range=modes, y_range=(0, 70),
+    p = figure(x_range=modes, y_range=(0, 140),
                plot_height=350,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -1034,7 +1034,7 @@ def plot_sustainability_25pm_per_mode(source, sub_key=1, savefig='None'):
 
 def plot_sustainability_ghg_per_mode(source, sub_key=1, savefig='None'):
     modes = ['ride_hail', 'car', 'bus']
-    p = figure(x_range=modes, y_range=(0, 16000000),
+    p = figure(x_range=modes, y_range=(0, 30000000),
                plot_height=350,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
