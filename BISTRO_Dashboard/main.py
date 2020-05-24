@@ -731,7 +731,7 @@ def plot_congestion_bus_vmt_by_ridership(source, sub_key=1, savefig='None'):
 def plot_congestion_on_demand_vmt_by_phases(source, sub_key=1, savefig='None'):
 
     driving_states = ["fetch", "fare"]
-    p = figure(x_range=HOURS, y_range=(0, 300),
+    p = figure(x_range=HOURS, y_range=(0, 350),
                plot_height=350, plot_width=700,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -1034,7 +1034,7 @@ def plot_sustainability_25pm_per_mode(source, sub_key=1, savefig='None'):
 
 def plot_sustainability_ghg_per_mode(source, sub_key=1, savefig='None'):
     modes = ['ride_hail', 'car', 'bus']
-    p = figure(x_range=modes, y_range=(0, 30000000),
+    p = figure(x_range=modes, y_range=(0, 35000000),
                plot_height=350,
                toolbar_location=None, tools="")
     p.add_layout(Title(text=sub_key, text_font_style="italic"), 'below')
@@ -1428,7 +1428,7 @@ def update_submission(submission_sources, sub_order):
             else:
                 plots[sub_order][plot_name].below[1].text = submission_key
             #save_png(plots[sub_order][plot_name], submission_key, plot_name)
-            #Title(text=submission_key, text_font_style="italic")
+        #print('finish save {}'.format(submission_key))
 
     return update_sub_order
 
