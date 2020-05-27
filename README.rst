@@ -5,11 +5,6 @@ Visualizations of BISTRO Results
 
 Usage
 -----
-Unless you provide a custom `submission_files_override.csv` file, the dashboard app will search your 
-data directory for scenario-submission pairs to show. It will automatically hide any pairs that it 
-knows about but can not find. It will automatically add and show any pairs that it did not
-previously know about. To manually override the show/hide settings, you may edit the second 
-column in `submission_files.csv` or provide your custom `submission_files_override.csv` file.
 
 To run the app, type:
 ::

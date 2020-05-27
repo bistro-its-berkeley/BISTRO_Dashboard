@@ -1428,7 +1428,10 @@ def update_submission(submission_sources, sub_order):
             else:
                 plots[sub_order][plot_name].below[1].text = submission_key
             #save_png(plots[sub_order][plot_name], submission_key, plot_name)
-        #print('finish save {}'.format(submission_key))
+        ########################################################################
+        # UNCOMMENT THE ABOVOE LINE IF YOU WANT TO SAVE PLOTS TO DISK.         #
+        ########################################################################
+
 
     return update_sub_order
 
