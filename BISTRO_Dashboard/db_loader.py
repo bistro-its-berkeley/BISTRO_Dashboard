@@ -210,22 +210,13 @@ class BistroDB(object):
         return df
 
     def load_scores(self, simulation_ids):
-        if len(simulation_ids) > 1:
-            db_cols = ['component','AVG(weight)','AVG(z_mean)','AVG(z_stddev)',
-                'AVG(raw_score)', 'AVG(submission_score)']
-            data = self.get_table(
-                'score', cols=db_cols,
-                condition="WHERE run_id IN ({}) GROUP BY component".format(
-                    self.binary_ids(simulation_ids))
-            )
-        else:
-            db_cols = ['component','weight','z_mean','z_stddev', 'raw_score',
-                       'submission_score']
-            data = self.get_table(
-                'score', cols=db_cols,
-                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
-                    simulation_ids[0])
-            )
+        db_cols = ['component','weight','z_mean','z_stddev', 'raw_score',
+                   'submission_score']
+        data = self.get_table(
+            'score', cols=db_cols,
+            condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                simulation_ids[0])
+        )
 
         df = pd.DataFrame(
             data,
@@ -311,17 +302,11 @@ class BistroDB(object):
 
         db_cols = ['vehicle_id','distance','mode','start_time','end_time',
                    'num_passengers','fuel_cost','fuel_consumed']
-        if len(simulation_ids) > 1:
-            data = self.get_table(
-                'pathtraversal', cols=db_cols,
-                condition="WHERE run_id IN ({})".format(
-                    self.binary_ids(simulation_ids))
-            )
-        else:
-            data = self.get_table(
-                'pathtraversal', cols=db_cols,
-                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
-                    simulation_ids[0]))
+
+        data = self.get_table(
+            'pathtraversal', cols=db_cols,
+            condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                simulation_ids[0]))
 
         path_df = pd.DataFrame(
             data,
@@ -345,17 +330,11 @@ class BistroDB(object):
         db_cols = ['person_id', 'realized_mode', 'distance', 'trip_num',
                    'trip_start', 'trip_end', 'fuel_cost', 'fare', 'toll',
                    'incentives', 'dest_act']
-        if len(simulation_ids) > 1:
-            data = self.get_table(
-                'trip', cols=db_cols,
-                condition="WHERE run_id IN ({})".format(
-                    self.binary_ids(simulation_ids))
-            )
-        else:
-            data = self.get_table(
-                'trip', cols=db_cols,
-                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
-                    simulation_ids[0]))
+
+        data = self.get_table(
+            'trip', cols=db_cols,
+            condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                simulation_ids[0]))
 
         df = pd.DataFrame(
             data,
@@ -369,19 +348,12 @@ class BistroDB(object):
     def load_mode_choice(self, simulation_ids, realized=False):
         table = 'realizedmodechoice' if realized else 'modechoice'
 
-        if len(simulation_ids) > 1:
-            db_cols = ['iterations', 'mode', 'FLOOR(AVG(count))']
-            data = self.get_table(
-                table, cols=db_cols,
-                condition="WHERE run_id IN ({}) GROUP BY iterations, mode".format(
-                    self.binary_ids(simulation_ids))
-            )
-        else:
-            db_cols = ['iterations', 'mode', 'count']        
-            data = self.get_table(
-                table, cols=db_cols,
-                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
-                    simulation_ids[0]))
+
+        db_cols = ['iterations', 'mode', 'count']        
+        data = self.get_table(
+            table, cols=db_cols,
+            condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                simulation_ids[0]))
 
         df = pd.DataFrame(data, columns=['iterations', 'mode', 'count'])
         df = df.pivot_table(index='iterations', columns='mode', values='count') 
@@ -389,19 +361,11 @@ class BistroDB(object):
         return df.reset_index()
 
     def load_hourly_mode_choice(self, simulation_ids):
-        if len(simulation_ids) > 1:
-            db_cols = ['mode','hour','FLOOR(AVG(count))']
-            data = self.get_table(
-                'hourlymodechoice', cols=db_cols,
-                condition="WHERE run_id IN ({}) GROUP BY mode, hour".format(
-                    self.binary_ids(simulation_ids))
-            )
-        else:
-            db_cols = ['mode','hour','count']
-            data = self.get_table(
-                'hourlymodechoice', cols=db_cols,
-                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
-                    simulation_ids[0]))
+        db_cols = ['mode','hour','count']
+        data = self.get_table(
+            'hourlymodechoice', cols=db_cols,
+            condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                simulation_ids[0]))
 
         df = pd.DataFrame(
             data, columns=['Modes', 'Hour', 'Count'])
@@ -414,19 +378,11 @@ class BistroDB(object):
         return df.T
 
     def load_travel_times(self, simulation_ids):
-        if len(simulation_ids) > 1:
-            db_cols = ['mode','hour','AVG(averagetime)']
-            data = self.get_table(
-                'traveltime', cols=db_cols,
-                condition="WHERE run_id IN ({}) GROUP BY mode, hour".format(
-                    self.binary_ids(simulation_ids))
-            )
-        else:
-            db_cols = ['mode','hour','averagetime']
-            data = self.get_table(
-                'traveltime', cols=db_cols,
-                condition="WHERE run_id = UUID_TO_BIN('{}')".format(
-                    simulation_ids[0]))
+        db_cols = ['mode','hour','averagetime']
+        data = self.get_table(
+            'traveltime', cols=db_cols,
+            condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+                simulation_ids[0]))
 
         df = pd.DataFrame(data, columns=['TravelTimeMode\\Hour','Hour','Traveltime'])
         df = df.pivot_table(index='TravelTimeMode\\Hour', columns='Hour', values='Traveltime')
