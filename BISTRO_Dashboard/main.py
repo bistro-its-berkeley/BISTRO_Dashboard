@@ -126,7 +126,7 @@ def plot_normalized_scores(source, sub_key=1, savefig='None'):
 
 def plot_casestudy_scores(source, sub_key=1, savefig='None'):
 
-    p = figure(#x_range=(-6, 2),
+    p = figure(x_range=(-3, 6),
                y_range=CASESTUDY_CAT[::-1],
                plot_height=350, plot_width=1200,
                toolbar_location=None, tools="")
@@ -1427,7 +1427,8 @@ def update_submission(submission_sources, sub_order):
                     .below[1].text = submission_key
             else:
                 plots[sub_order][plot_name].below[1].text = submission_key
-            #save_png(plots[sub_order][plot_name], submission_key, plot_name)
+        #    save_png(plots[sub_order][plot_name], submission_key, plot_name)
+        #print("finish")
         ########################################################################
         # UNCOMMENT THE ABOVOE LINE IF YOU WANT TO SAVE PLOTS TO DISK.         #
         ########################################################################

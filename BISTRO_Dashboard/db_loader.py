@@ -112,7 +112,8 @@ class BistroDB(object):
 
     def load_links(self, scenario):
         data = self.query("""
-            SELECT l.link_id, fnode.x, fnode.y, tnode.x, tnode.y
+            SELECT l.link_id, l.original_node_id, l.destination_node_id,
+                   fnode.x, fnode.y, tnode.x, tnode.y
             FROM link l
             INNER JOIN node fnode ON fnode.node_id = l.original_node_id
                                   AND fnode.scenario = '{0}'
@@ -122,7 +123,8 @@ class BistroDB(object):
             """.format(scenario))
         return pd.DataFrame(
             data,
-            columns=['LinkId', 'fromLocationX', 'fromLocationY', 'toLocationX',
+            columns=['LinkId', 'fromLocationID', 'toLocationID',
+                     'fromLocationX', 'fromLocationY', 'toLocationX',
                      'toLocationY']
             )
 
@@ -248,24 +250,39 @@ class BistroDB(object):
     def load_household(self, scenario):
         pass
 
-    def load_legs(self, simulation_ids):
-        db_cols = ['distance','leg_mode','vehicle','leg_start','fare','fuel_cost','toll']
-
-        if len(simulation_ids) > 1:
-            data = self.get_table(
-                'leg', cols=db_cols,
-                condition="WHERE run_id IN ({})".format(
-                    self.binary_ids(simulation_ids))
+    def load_legs(self, simulation_ids, links=False):
+        db_cols = ['trip_num', 'leg_num', 'distance','leg_mode','vehicle',
+                   'leg_start','fare','fuel_cost','toll']
+        df_columns = ['Trip_ID', 'Leg_ID','Distance_m','Mode','Veh',
+                      'Start_time','Fare','fuelCost','Toll']
+        if links:
+            # because we are joining two different columns,
+            # it's better to append table name before columns.
+            leg_cols = ['leg.'+col for col in db_cols]
+            data = self.query(
+                """
+                SELECT {}, leg_link.link_id
+                FROM leg
+                INNER JOIN leg_link ON leg_link.run_id = leg.run_id
+                                    AND leg_link.person_id = leg.person_id
+                                    AND leg_link.trip_num = leg.trip_num
+                                    AND leg_link.leg_num = leg.leg_num
+                WHERE leg.run_id = UUID_TO_BIN('{}')
+                """.format(', '.join(leg_cols), simulation_ids[0])
             )
+            df_columns += ['LinkId']
         else:
             data = self.get_table(
                 'leg', cols=db_cols,
                 condition="WHERE run_id = UUID_TO_BIN('{}')".format(
                     simulation_ids[0]))
 
-        df = pd.DataFrame(
-            data,
-            columns=['Distance_m','Mode','Veh','Start_time','Fare','fuelCost','Toll'])
+        df = pd.DataFrame(data, columns=df_columns)
+        
+        if links:
+            df = df.groupby(df_columns).agg({'LinkId':lambda x: list(x)})
+            df = df.reset_index(inplace=True)
+
         return df
 
     def load_vehicles(self, scenario):
