@@ -247,7 +247,7 @@ class BistroDB(object):
         df_columns = ['PID','Trip_ID', 'Leg_ID','Distance_m','Mode','Veh',
                       'Start_time','Fare','fuelCost','Toll']
         if links:
-            # because we are joining two different columns,
+            # because we are joining two different tables,
             # it's better to append table name before columns.
             leg_cols = ['leg.'+col for col in db_cols]
             data = self.query(
@@ -268,7 +268,7 @@ class BistroDB(object):
                 condition="WHERE run_id = UUID_TO_BIN('{}')".format(
                     simulation_ids[0]))
             df = pd.DataFrame(data, columns=df_columns)
-        
+
         if links:
             df = df.groupby(df_columns).agg({'LinkId':lambda x: list(x)})
             df.reset_index(inplace=True)
