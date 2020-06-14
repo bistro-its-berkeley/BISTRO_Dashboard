@@ -242,9 +242,9 @@ class BistroDB(object):
         pass
 
     def load_legs(self, simulation_ids, links=False):
-        db_cols = ['trip_num', 'leg_num', 'distance','leg_mode','vehicle',
-                   'leg_start','fare','fuel_cost','toll']
-        df_columns = ['Trip_ID', 'Leg_ID','Distance_m','Mode','Veh',
+        db_cols = ['person_id','trip_num', 'leg_num', 'distance','leg_mode',
+                   'vehicle', 'leg_start','fare','fuel_cost','toll']
+        df_columns = ['PID','Trip_ID', 'Leg_ID','Distance_m','Mode','Veh',
                       'Start_time','Fare','fuelCost','Toll']
         if links:
             # because we are joining two different columns,
@@ -254,25 +254,24 @@ class BistroDB(object):
                 """
                 SELECT {}, leg_link.link_id
                 FROM leg
-                INNER JOIN leg_link ON leg_link.run_id = leg.run_id
+                LEFT JOIN leg_link ON leg_link.run_id = leg.run_id
                                     AND leg_link.person_id = leg.person_id
                                     AND leg_link.trip_num = leg.trip_num
                                     AND leg_link.leg_num = leg.leg_num
                 WHERE leg.run_id = UUID_TO_BIN('{}')
                 """.format(', '.join(leg_cols), simulation_ids[0])
             )
-            df_columns += ['LinkId']
+            df = pd.DataFrame(data, columns=df_columns+['LinkId'])
         else:
             data = self.get_table(
                 'leg', cols=db_cols,
                 condition="WHERE run_id = UUID_TO_BIN('{}')".format(
                     simulation_ids[0]))
-
-        df = pd.DataFrame(data, columns=df_columns)
+            df = pd.DataFrame(data, columns=df_columns)
         
         if links:
             df = df.groupby(df_columns).agg({'LinkId':lambda x: list(x)})
-            df = df.reset_index(inplace=True)
+            df.reset_index(inplace=True)
 
         return df
 
