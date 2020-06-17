@@ -111,9 +111,11 @@ class BistroDB(object):
             data, columns=['simulation_id','datetime','scenario', 'name', 'tag'])
 
     def load_links(self, scenario):
+    	# Added freespeed and length to the links table
+    	
         data = self.query("""
-            SELECT l.link_id, l.original_node_id, l.destination_node_id,
-                   fnode.x, fnode.y, tnode.x, tnode.y
+            SELECT l.link_id, l.original_node_id, l.destination_node_id, 
+                   fnode.x, fnode.y, tnode.x, tnode.y, l.length, l.freespeed
             FROM link l
             INNER JOIN node fnode ON fnode.node_id = l.original_node_id
                                   AND fnode.scenario = '{0}'
@@ -125,7 +127,7 @@ class BistroDB(object):
             data,
             columns=['LinkId', 'fromLocationID', 'toLocationID',
                      'fromLocationX', 'fromLocationY', 'toLocationX',
-                     'toLocationY']
+                     'toLocationY', 'length', 'freespeed']
             )
 
     def load_frequency(self, simulation_id):
@@ -243,9 +245,9 @@ class BistroDB(object):
 
     def load_legs(self, simulation_ids, links=False):
         db_cols = ['person_id','trip_num', 'leg_num', 'distance','leg_mode',
-                   'vehicle', 'leg_start','fare','fuel_cost','toll']
+                   'vehicle', 'leg_start', 'leg_end', 'fare','fuel_cost','toll']
         df_columns = ['PID','Trip_ID', 'Leg_ID','Distance_m','Mode','Veh',
-                      'Start_time','Fare','fuelCost','Toll']
+                      'Start_time','End_time', 'Fare','fuelCost','Toll']
         if links:
             # because we are joining two different tables,
             # it's better to append table name before columns.
@@ -296,21 +298,49 @@ class BistroDB(object):
 
         return df
 
-    def load_paths(self, simulation_ids, scenario):
+    def load_paths(self, simulation_ids, scenario, links=False):
+    	# Modified as an example for linking the 'pathtraversal' and 'link' table
+
         # mode length vehicle "numPassengers", "vehicleType", "departureTime", "arrivalTime" fuelCost
 
         db_cols = ['vehicle_id','distance','mode','start_time','end_time',
+                   'num_passengers','fuel_cost','fuel_consumed', 'start_x', 'start_y', 'end_x', 'end_y']
+        df_columns = ['vehicle','distance','mode','departureTime','arrivalTime',
+                     'numPassengers','fuelCost','fuelConsumed', 'start_x', 'start_y', 'end_x', 'end_y']
+
+        db_cols_link = ['vehicle_id','distance','mode','start_time','end_time',
                    'num_passengers','fuel_cost','fuel_consumed']
+        df_columns_link = ['vehicle','distance','mode','departureTime','arrivalTime',
+                     'numPassengers','fuelCost','fuelConsumed']
 
-        data = self.get_table(
-            'pathtraversal', cols=db_cols,
-            condition="WHERE run_id = UUID_TO_BIN('{}')".format(
-                simulation_ids[0]))
+        if links:
+        	path_cols = ['pathtraversal.'+col for col in db_cols_link]
+        	data = self.query(
+        		"""
+        		SELECT {}, pathtraversal_link.link_id
+        		FROM pathtraversal
+        		JOIN pathtraversal_link ON pathtraversal_link.run_id = pathtraversal.run_id
+        							AND pathtraversal_link.vehicle_id = pathtraversal.vehicle_id
+        							AND pathtraversal_link.path_num = pathtraversal.path_num
+        		WHERE pathtraversal.run_id = UUID_TO_BIN('{}')
+                """.format(', '.join(path_cols), simulation_ids[0])
+                )
+        	path_df = pd.DataFrame(data, columns=df_columns_link+['LinkId'])
+        	
+        	#### Uncomment below if need to group the links for each path.
 
-        path_df = pd.DataFrame(
-            data,
-            columns=['vehicle','length','mode','departureTime','arrivalTime',
-                     'numPassengers','fuelCost','fuelConsumed'])
+        	# df = df.groupby(df_columns).agg({'LinkId':lambda x: list(x)})
+            # df.reset_index(inplace=True)
+
+        else:
+	        data = self.get_table(
+	            'pathtraversal', cols=db_cols,
+	            condition="WHERE run_id = UUID_TO_BIN('{}')".format(
+	                simulation_ids[0]))
+
+	        path_df = pd.DataFrame(
+	            data,
+	            columns=df_columns)
 
         vehicle_df = self.load_vehicles(scenario)
         return path_df.merge(vehicle_df, left_on='vehicle', right_on='vehicle')
