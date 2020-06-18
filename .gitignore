@@ -1,7 +1,8 @@
 env/
 *.png
 *.pyc
-*.ipynb
+*checkpoint.ipynb
+*vehicle_movements_sioux_faux.ipynb
 *.DS_Store
 BISTRO_Dashboard/submission_files_override.csv
 BISTRO_Dashboard/data/submissions/*
