@@ -9,3 +9,5 @@ BISTRO_Dashboard/data/submissions/*
 !BISTRO_Dashboard/data/submissions/*/.gitkeep
 figures/
 *.ini
+BISTRO_Dashboard/dashboard_profile.ini
+notebook examples/new_database.ipynb
