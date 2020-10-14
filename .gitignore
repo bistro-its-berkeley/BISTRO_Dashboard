@@ -9,3 +9,4 @@ BISTRO_Dashboard/data/submissions/*
 figures/
 *.ini
 BISTRO_Dashboard/dashboard_profile.ini
+notebook_examples/new_database.ipynb
