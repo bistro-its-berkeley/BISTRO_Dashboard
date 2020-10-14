@@ -386,7 +386,7 @@ class BistroDB(object):
 
         df = pd.DataFrame(data, columns=['iterations', 'mode', 'count'])
         df = df.pivot_table(index='iterations', columns='mode', values='count') 
-        del df.columns.name
+        del df[df.columns.name]
         return df.reset_index()
 
     def load_hourly_mode_choice(self, simulation_ids):
@@ -399,7 +399,7 @@ class BistroDB(object):
         df = pd.DataFrame(
             data, columns=['Modes', 'Hour', 'Count'])
         df = df.pivot_table(index='Modes', columns='Hour', values='Count')
-        del df.columns.name
+        del df[df.columns.name]
         df.rename(
             columns={hour:'Bin_'+str(hour) for hour in df.columns},
             inplace=True)
@@ -415,7 +415,7 @@ class BistroDB(object):
 
         df = pd.DataFrame(data, columns=['TravelTimeMode\\Hour','Hour','Traveltime'])
         df = df.pivot_table(index='TravelTimeMode\\Hour', columns='Hour', values='Traveltime')
-        del df.columns.name
+        del df[df.columns.name]
         return df.reset_index()
 
     def load_vehicle_cost(self, scenario):
