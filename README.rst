@@ -16,6 +16,11 @@ It may take a minute or so for the dashboard to load up, depending on how many s
 comparing. Once it loads up, use the dropdown menus to choose the two scenario-submission pairs that 
 you want to compare.
 
+To enter debug mode: 
+::
+	bokeh serve --log-level=debug --show BISTRO_Dashboard/
+Although some exception might not be caught by bokeh, in which case you need to manually test out each plot/tab.
+	
 Installation
 ------------
 To pull down the repo, type this into your terminal in the directory you want this installed:
@@ -27,6 +32,10 @@ Create a virtual environment to install your python packages in, and install the
 	virtualenv env
 	. env/bin/activate
 	pip install -r requirements.txt
+
+To activate your virtual environment for the Dashboard:
+::
+	source env/bin/activate
 
 Database
 ------------
