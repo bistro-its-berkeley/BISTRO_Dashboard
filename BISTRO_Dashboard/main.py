@@ -436,6 +436,13 @@ def plot_mode_choice_by_time(source, sub_key=1, savefig='None'):
 def plot_mode_choice_by_income_group(source, sub_key=1, savefig='None'):
 
     bins = ['[$0, $10k)', '[$10k, $25k)', '[$25k, $50k)', '[$50k, $75k)', '[$75k, $100k)', '[$100k, inf)']
+    #bins = ['[$0, $10k)', '[$10k, $25k)', '[$25k, $50k)', '[$50k, $75k)', '[$75k, inf)']
+    
+    #print(type(source))
+    #print(source.data)
+    #print(source)
+    #bins = list(source.to_df().to_dict('list').keys())[1:]
+    #print(bins)
 
     p = figure(x_range=MODES, y_range=(0, 15000),
                plot_height=350,
@@ -1219,7 +1226,9 @@ plots = {'submission1': {}, 'submission2': {}}
 for sub_order, sub_key in \
         [('submission1',submission1_key), ('submission2',submission2_key)]:
     sources = submission_sources[sub_order]
+    
     submission = submission_dict[scenario_key]['submissions'][sub_key]
+
     plots[sub_order]['normalized_scores'] = plot_normalized_scores(
         source=sources['normalized_scores_source'], sub_key=sub_key)
     plots[sub_order]['casestudy_scores'] = plot_casestudy_scores(
@@ -1386,7 +1395,6 @@ outputs_toll_plots = row(
 outputs_sustainability_plots = row(
     *[column([plots[sub_order][p] for p in submission_outputs_sustainability_plots])
     for sub_order in sub_orders])
-
 submission1_select = Select(value='{}/{}'.format(scenario_key, submission1_key),
                      title='Submission 1', 
                      options=submissions)
@@ -1445,6 +1453,7 @@ submission1_select.on_change(
 submission2_select.on_change(
     'value', update_submission(submission_sources, 'submission2'))
 
+# plots under tabs
 inputs = layout([inputs_plots], sizing_mode='fixed')
 scores = layout([[scores_plots]], sizing_mode='fixed')
 outputs_mode = layout([outputs_mode_plots], sizing_mode='fixed')
@@ -1454,6 +1463,7 @@ outputs_transitcb = layout([outputs_transitcb_plots], sizing_mode='fixed')
 outputs_toll = layout([outputs_toll_plots], sizing_mode='fixed')
 outputs_sustainability = layout([outputs_sustainability_plots], sizing_mode='fixed')
 
+# creating tabs 
 inputs_tab = Panel(child=inputs,title="Inputs")
 scores_tab = Panel(child=scores,title="Scores")
 outputs_mode_tab = Panel(child=outputs_mode,title="Outputs - Mode Choice")
@@ -1463,8 +1473,9 @@ outputs_transitcb_tab = Panel(child=outputs_transitcb,title="Outputs - Cost/Bene
 outputs_toll_tab = Panel(child=outputs_toll,title='Outputs - Toll Revenue')
 outputs_sustainability_tab = Panel(child=outputs_sustainability,title="Outputs - Sustainability")
 
+# list of tabs of the dashboard page
 tabs=[
-    inputs_tab, 
+    inputs_tab,
     scores_tab,
     outputs_mode_tab,
     outputs_los_tab,

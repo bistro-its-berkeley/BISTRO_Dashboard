@@ -291,27 +291,32 @@ class Submission():
                 ['Equity: average travel cost burden -  secondary',
                  'Equity: average travel cost burden - work'])
         ]['Weighted Score'].mean()
-        TR = float(scores[scores["Component Name"]=='Toll Revenue']['Weighted Score'])
+        TR = scores[scores["Component Name"]=='Toll Revenue']['Weighted Score'].astype(float)
         aggregate = 0.4*social_avg+0.4*TR+0.2*congestion_avg
+        
+        # check for empty serie from BEAM output parsing
+        if len(aggregate.index) == 0:
+            aggregate = 0 
 
         agg_scores = pd.DataFrame({
             "Component Name":["Congestion: Average Score",
                               "Social: Average Score",
                               "Aggregate Score"],
             "Weighted Score":[congestion_avg, social_avg, aggregate]})
-
         scores = scores.append(agg_scores, ignore_index = True)
 
         scores.set_index("Component Name", inplace=True)
         scores.reset_index(inplace=True)
 
+        scores.fillna(0, inplace=True)
         scores.loc[:, "Component Name"] = scores["Component Name"].astype('category')#.cat.reorder_categories(CATEGORIES)
 
         scores = scores.sort_values(by="Component Name")
 
         scores.loc[:, 'color'] = "#4682b4"
         scores.loc[scores["Component Name"] == 'Submission Score', 'color'] = "#000080"
-
+        print(scores)
+        
         # min_score = min(scores['Weighted Score'].min(), 0.0) * 1.1
         # max_score = max(scores['Weighted Score'].max(), 1.0) * 1.1
 
@@ -321,6 +326,7 @@ class Submission():
     def make_case_study_scores_data(self):
         scores = self.scores_df
         scores = scores.loc[:,["Component Name", "Weighted Score"]]
+        scores.fillna(0, inplace=True)
         scores.set_index("Component Name", inplace=True)
         scores.reset_index(inplace=True)
 
@@ -329,6 +335,7 @@ class Submission():
         scores = scores.sort_values(by="Component Name")
 
         scores.loc[:, 'color'] = "#4682b4"
+        print(scores)
         #scores.loc[scores["Component Name"] == 'Submission Score', 'color'] = "#000080"
 
         # min_score = min(scores['Weighted Score'].min(), 0.0) * 1.1
@@ -611,14 +618,18 @@ class Submission():
         people_income_mode = self.persons_df[persons_cols].merge(
             self.trips_df[trips_cols], on=['PID'])
         edges = [0, 10000, 25000, 50000, 75000, 100000, float('inf')]
+        #edges = [0, 10000, 25000, 50000, 75000, float('inf')]
         bins = ['[$0, $10k)', '[$10k, $25k)', '[$25k, $50k)', '[$50k, $75k)',
                 '[$75k, $100k)', '[$100k, inf)']
+        #bins = ['[$0, $10k)', '[$10k, $25k)', '[$25k, $50k)', '[$50k, $75k)',
+        #        '[$75k, inf)']
         people_income_mode.loc[:, 'income_group'] = pd.cut(
             people_income_mode['income'],
             bins=edges,
             labels=bins,
             right=False
         ).astype(str)
+
         grouped = people_income_mode.groupby(
             by=['realizedTripMode', 'income_group']).agg('count').reset_index()
         # ymax = grouped['PID'].max() * 1.1
@@ -630,6 +641,11 @@ class Submission():
             columns='income_group', 
             values='PID'
         ).reset_index().rename(columns={'index':'realizedTripMode'})
+
+        for b in bins:
+            if b not in grouped.columns:
+                grouped[b] = 0
+
         data = grouped.to_dict(orient='list')
 
         return data 
@@ -657,6 +673,11 @@ class Submission():
             columns='age_group', 
             values='PID'
         ).reset_index().rename(columns={'index':'realizedTripMode'})
+
+        for b in bins:
+            if b not in grouped.columns:
+                grouped[b] = 0
+
         data = grouped.to_dict(orient='list')
         return data 
 
@@ -770,13 +791,13 @@ class Submission():
     def make_congestion_miles_traveled_per_mode_data(self):
         # get_vmt_dataframe:
         vmt_walk = round(
-            self.paths_df[self.paths_df["mode"] == "walk"]["length"].apply(
+            self.paths_df[self.paths_df["mode"] == "walk"]["distance"].apply(
                 lambda x: x * 0.000621371).sum(), 0)
         vmt_bus = round(
-            self.paths_df[self.paths_df["mode"] == "bus"]["length"].apply(
+            self.paths_df[self.paths_df["mode"] == "bus"]["distance"].apply(
                 lambda x: x * 0.000621371).sum(), 0)
         vmt_on_demand = round(
-            self.paths_df[self.paths_df["vehicle"].str.contains("rideHailVehicle")]["length"].apply(lambda x: x * 0.000621371).sum(), 0)
+            self.paths_df[self.paths_df["vehicle"].str.contains("rideHailVehicle")]["distance"].apply(lambda x: x * 0.000621371).sum(), 0)
         vmt_car = round(
             self.legs_df[self.legs_df["Mode"] == "car"]["Distance_m"].apply(
                 lambda x: x * 0.000621371).sum(), 0)
@@ -826,7 +847,7 @@ class Submission():
         return data
 
     def make_congestion_bus_vmt_by_ridership_data(self):
-        columns = ["numPassengers", "vehicleType", "length",
+        columns = ["numPassengers", "vehicleType", "distance",
                    "departureTime", "arrivalTime"]
         vmt_bus_ridership = self.paths_df[self.paths_df["mode"] == "bus"][columns]
         vmt_bus_ridership.loc[:, 'seatingCapacity'] = vmt_bus_ridership['vehicleType'].apply(
@@ -847,7 +868,7 @@ class Submission():
 
         # Group by hours of the day and number of passengers in the bus
         vmt_bus_ridership = vmt_bus_ridership.groupby(
-            by=["Hour", "ridershipPerc"])['length'].sum().reset_index()
+            by=["Hour", "ridershipPerc"])['distance'].sum().reset_index()
         edges = [0, 0.01, 50, 100, 150.0, 200.0]
         bins = [
             'empty\n(0 passengers)', 
@@ -868,7 +889,7 @@ class Submission():
         # del vmt_bus_ridership['arrivalTime']
         # Completing the dataframe with the missing ridership bins (so that they appear in the plot)
         df = pd.DataFrame([0, 0.0, ""]).T
-        df.columns = ["Hour", "length", "ridership"]
+        df.columns = ["Hour", "distance", "ridership"]
 
         for ridership in bins:
             for hour in range(24):
@@ -879,15 +900,15 @@ class Submission():
                         df, ignore_index=True, sort=False)
 
         vmt_bus_ridership = vmt_bus_ridership.groupby(
-            ['Hour', 'ridership'])['length'].sum().reset_index()
+            ['Hour', 'ridership'])['distance'].sum().reset_index()
         # translate meters to miles
-        vmt_bus_ridership.loc[:, 'length'] = round(
-            vmt_bus_ridership['length'].apply(
+        vmt_bus_ridership.loc[:, 'distance'] = round(
+            vmt_bus_ridership['distance'].apply(
                 lambda x: x * 0.000621371), 0)
         vmt_bus_ridership = vmt_bus_ridership.pivot(
             index='Hour',
             columns='ridership', 
-            values='length')
+            values='distance')
         # ymax = vmt_bus_ridership.sum(axis=1).max()*1.1
 
         # colors = Dark2[len(bins)]
@@ -897,7 +918,7 @@ class Submission():
 
     def make_congestion_on_demand_vmt_by_phases_data(self):
 
-        columns = ["numPassengers", "departureTime", "length"]
+        columns = ["numPassengers", "departureTime", "distance"]
         vmt_on_demand = self.paths_df[self.paths_df["vehicle"].str.contains("rideHailVehicle")].copy()[columns]
         # Split the travels by hour of the day
         edges = range(0,25*3600,3600)
@@ -911,19 +932,19 @@ class Submission():
             labels=driving_states, right=False)
 
         vmt_on_demand = vmt_on_demand.groupby(
-            by=["Hour", "drivingState"])['length'].sum().reset_index()
+            by=["Hour", "drivingState"])['distance'].sum().reset_index()
         vmt_on_demand.replace(np.nan, 0, inplace=True)
         vmt_on_demand.loc[:, "Hour"] = vmt_on_demand["Hour"].astype("int")
 
         # translate meters to miles
-        vmt_on_demand.loc[:,'length'] = round(
-            vmt_on_demand.loc[:,'length'].apply(
+        vmt_on_demand.loc[:,'distance'] = round(
+            vmt_on_demand.loc[:,'distance'].apply(
                 lambda x: x * 0.000621371), 0)
 
         vmt_on_demand = vmt_on_demand.pivot(
             index='Hour', 
             columns='drivingState',
-            values='length')
+            values='distance')
         vmt_on_demand = vmt_on_demand.reset_index()
 
         for h in HOURS:
@@ -1191,15 +1212,15 @@ class Submission():
 
     def make_sustainability_25pm_per_mode_data(self):
         
-        columns = ["vehicle", "mode", "length", "departureTime"]
+        columns = ["vehicle", "mode", "distance", "departureTime"]
         vmt = self.paths_df.copy()[columns]
 
         # emissions for each mode
         emissions_bus = round(
-            vmt[vmt["mode"] == "bus"]["length"].apply(
+            vmt[vmt["mode"] == "bus"]["distance"].apply(
                 lambda x: x * 0.000621371 * 0.0025936648).sum(), 0)
         emissions_on_demand = round(
-            vmt[vmt["vehicle"].str.contains("rideHailVehicle")]["length"].apply(
+            vmt[vmt["vehicle"].str.contains("rideHailVehicle")]["distance"].apply(
                 lambda x: x * 0.000621371 * 0.001716086).sum(), 0)
         emissions_car = round(
             self.legs_df[self.legs_df["Mode"] == "car"]["Distance_m"].apply(
@@ -1223,7 +1244,7 @@ class Submission():
 
     def make_sustainability_ghg_per_mode_data(self):
         
-        columns = ["vehicle", "mode", "length", "departureTime", "fuelConsumed"]
+        columns = ["vehicle", "mode", "distance", "departureTime", "fuelConsumed"]
         vmt = self.paths_df.copy()[columns]
 
         # emissions for each mode
