@@ -12,8 +12,8 @@ To run the app, type:
 
 Your browser will then open to: `http://localhost:5006/BISTRO_Dashboard`.
 
-It may take a minute or so for the dashboard to load up, depending on how many submissions you are
-comparing. Once it loads up, use the dropdown menus to choose the two scenario-submission pairs that 
+It may take a couple minutes or so for the dashboard to load up, depending on how many submissions you are
+comparing and your internet download speed. Once it loads up, use the dropdown menus to choose the two scenario-submission pairs that 
 you want to compare.
 
 To enter debug mode: 
