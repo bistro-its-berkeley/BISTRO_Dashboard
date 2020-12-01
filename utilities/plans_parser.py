@@ -740,7 +740,7 @@ def get_persons_attributes_output(output_plans_xml, persons_xml, households_xml,
 
     return persons_attributes_df
 
-
+""" old version for sioux faux run
 def get_activities_list(experienced_plans_xml, scenario):
     plans_root = experienced_plans_xml.getroot()
     acts_array = []
@@ -754,6 +754,39 @@ def get_activities_list(experienced_plans_xml, scenario):
             act_id += 1
             act_type = activity.get('type')
             act_link = int(activity.get('link'))
+            if activity.get('start_time') is None:
+                act_start_time = None
+            else:
+                act_start_time = activity.get('start_time')
+            if activity.get('end_time') is None:
+                act_end_time = None
+            else:
+                act_end_time = activity.get('end_time')
+            acts_array.append(
+                [pid, act_id, act_type, act_link, act_start_time, act_end_time,
+                 scenario]
+            )
+    return acts_array
+    """
+
+    def get_activities_list(experienced_plans_xml, scenario):
+    plans_root = experienced_plans_xml.getroot()
+    acts_array = []
+
+    for person in plans_root.findall('./person'):
+        pid = person.get('id')
+        plan = person.getchildren()[1]  # change is here [0]
+        activities = plan.findall('./activity')
+        act_id = 0
+        for activity in activities:
+            act_id += 1
+            act_type = activity.get('type')
+            
+            if activity.get('link') is None:
+                act_link = None
+            else:
+                act_link = int(activity.get('link'))
+            
             if activity.get('start_time') is None:
                 act_start_time = None
             else:

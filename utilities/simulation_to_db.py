@@ -194,8 +194,7 @@ def store_activity_data_to_db(output_path, scenario, iteration, bistro_db):
     if 'sf_light' in scenario:
         activities_list = get_activities_list(
             open_xml(output_path +
-                 '/output_plans.xml.gz'.format(iteration)),
-            scenario)
+                 '/output_plans.xml.gz')
     else:
         activities_list = get_activities_list(
             open_xml(output_path +
@@ -430,6 +429,7 @@ def store_simulation_scores_to_db(output_path, simulation_id, bistro_db):
                 'Raw Score', 'Weighted Score']].values.tolist()
         )
     # added default handling for missing the submissionScores.csv file for BEAM outputs 
+    #### TODO HERE: ADD DEFAULT SIMULATION SCORE WHEN PARSING BEAM OUTPUTS, ELSE ERROR ON DASHBOARD
     else:
         print(output_path, '/competition/submissionScores.csv file not found, skipped prasing and storing.')
 
@@ -532,6 +532,7 @@ def return_event_data(
 def parse_and_store_data_to_db(
         output_path, fixed_data, city, sample_size, iteration, name='test',
         cordon=False, standardize_score=False, local=False, db_name='bistro'):
+                                                            #db_name = ['bistro_sf_light', 'bistro']
 
     datetime_pattern = r"__(\d+)-(\d+)-(\d+)_(\d+)-(\d+)-(\d+)"
 
@@ -546,7 +547,8 @@ def parse_and_store_data_to_db(
 
     scenario_n_size = city + '-' + sample_size
 
-    bistro_db = parse_credential(join(dirname(__file__),'dashboard_profile.ini'))
+    bistro_db = BistroDB('bistro', 'bistroclt', 'client', '52.53.200.197')
+    #parse_credential(join(dirname(__file__),'dashboard_profile.ini'))
 
     for table in TABLES_LIST:
         bistro_db.create_table(table, TABLES[table])
@@ -660,19 +662,23 @@ def tpe_path(root, name):
 
 if __name__ == '__main__':
 
-    # city = 'sf_light'
-    # sample_size = '25k'
-    # iteration = 0
+    output_path = '/Users/admin/sf_light_output/sparse_urbansim-100k__2020-11-05_02-31-11_bom'
+    fixed_data = '/Users/admin/Desktop/BISTRO_Research/BISTRO-Starter-Kit-master/fixed-data-github'
+    city = 'sf_light'
+    sample_size = '100k'
+    iteration = 20
 
-    city = 'sioux_faux'
-    sample_size = '15k'
-    iteration = 99
+    # city = 'sioux_faux'
+    # sample_size = '15k'
+    # iteration = 99
 
+    """
     output_root = '/Users/zangnanyu/bistro/BeamCompetitions/output'
     input_root = '/Users/zangnanyu/bistro/BeamCompetitions/submission-inputs'
     fixed_data = '/Users/zangnanyu/bistro/BeamCompetitions/fixed-data'
-
-    print("start running simulation")
+    """
+    
+    # print("start running simulation")
     # log = os.popen(
     #     """docker run -it --memory=8g --cpus=4 -v {}:/submission-inputs:ro
     #     -v {}:/output:rw beammodel/beam-competition:0.0.3-SNAPSHOT
@@ -689,6 +695,8 @@ if __name__ == '__main__':
 
     # output_root += '/' if output_root[-1] != '/' else ''
     # output_path = (output_root + city + '/' +  city + '-' + sample_size + match.group())
-    output_path = '/Users/zangnanyu/bistro/BeamCompetitions/fixed-data/sioux_faux/bau/warm-start/sioux_faux-15k__warm-start'
+
+
+    # output_path = '/Users/zangnanyu/bistro/BeamCompetitions/fixed-data/sioux_faux/bau/warm-start/sioux_faux-15k__warm-start'
 
     parse_and_store_data_to_db(output_path, fixed_data, city, sample_size, iteration)
