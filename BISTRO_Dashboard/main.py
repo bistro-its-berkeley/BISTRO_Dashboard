@@ -71,6 +71,42 @@ SOURCE_NAME_DATA_PAIR = [
 ('sustainability_ghg_per_mode_source', 'sustainability_ghg_per_mode_data')
 ]
 
+SOURCE_NAME_DATA_PAIR2 = [
+('normalized_scores_source', 'normalized_scores_data'),
+('fleetmix_input_source', 'fleetmix_input_data'),
+('routesched_input_line_source', 'routesched_input_line_data'),
+('routesched_input_start_source', 'routesched_input_start_data'),
+('routesched_input_end_source', 'routesched_input_end_data'),
+('fares_input_source', 'fares_input_data'),
+('modeinc_input_source', 'modeinc_input_data'),
+('link_source','link_data'),
+('toll_circle_source','toll_circle_data'),
+('mode_planned_pie_chart_source', 'mode_planned_pie_chart_data'),
+('mode_realized_pie_chart_source', 'mode_realized_pie_chart_data'),
+('mode_choice_by_time_source', 'mode_choice_by_time_data'),
+('mode_choice_by_income_group_source', 'mode_choice_by_income_group_data'),
+('mode_choice_by_age_group_source', 'mode_choice_by_age_group_data'),
+('mode_choice_by_distance_source', 'mode_choice_by_distance_data'),
+('congestion_travel_time_by_mode_source',
+    'congestion_travel_time_by_mode_data'),
+('congestion_travel_time_per_passenger_trip_source',
+    'congestion_travel_time_per_passenger_trip_data'),
+('congestion_miles_traveled_per_mode_source',
+    'congestion_miles_traveled_per_mode_data'),
+('congestion_car_vmt_by_time_source',
+    'congestion_car_vmt_by_time_data'),
+('congestion_bus_vmt_by_ridership_source',
+    'congestion_bus_vmt_by_ridership_data'),
+('congestion_on_demand_vmt_by_phases_source',
+    'congestion_on_demand_vmt_by_phases_data'),
+('congestion_travel_speed_source', 'congestion_travel_speed_data'),
+('los_travel_expenditure_source', 'los_travel_expenditure_data'),
+('transit_inc_by_mode_source', 'transit_inc_by_mode_data'),
+('toll_revenue_by_time_source','toll_revenue_by_time_data'),
+('sustainability_25pm_per_mode_source', 'sustainability_25pm_per_mode_data'),
+('sustainability_ghg_per_mode_source', 'sustainability_ghg_per_mode_data')
+]
+
 def save_png(plot, sub_key, name):
     f_name = ""
     f_name += "figures/" + sub_key + "/"
@@ -1216,9 +1252,14 @@ for sub_order, submission_key in \
     submission = submission_dict[scenario_key]['submissions'][submission_key]
     submission.get_data()
     submission.make_data_sources()
-    for source_name, data_name in SOURCE_NAME_DATA_PAIR:
-        submission_sources[sub_order][source_name] = ColumnDataSource(
-            data=getattr(submission, data_name))
+    try: # temp fix 12/20
+      for source_name, data_name in SOURCE_NAME_DATA_PAIR:
+          submission_sources[sub_order][source_name] = ColumnDataSource(
+              data=getattr(submission, data_name))
+    except:
+      for source_name, data_name in SOURCE_NAME_DATA_PAIR2:
+          submission_sources[sub_order][source_name] = ColumnDataSource(
+              data=getattr(submission, data_name))
 ###################################################
 
 ### Generate plots from ColumnDataSource's ###
@@ -1300,13 +1341,16 @@ for sub_order, sub_key in \
         plot_los_travel_expenditure(
             source=sources['los_travel_expenditure_source'],
             sub_key=sub_key)
-    plots[sub_order]['los_crowding'] = plot_los_crowding(
-        source=sources['los_crowding_source'], sub_key=sub_key,
-        route_ids=submission.route_ids)
-    plots[sub_order]['transit_cb'] = plot_transit_cb(
-        costs_source=sources['transit_cb_costs_source'],
-        benefits_source=sources['transit_cb_benefits_source'], sub_key=sub_key,
-        route_ids=submission.route_ids)
+    try: # temp fix 12/20
+      plots[sub_order]['los_crowding'] = plot_los_crowding(
+          source=sources['los_crowding_source'], sub_key=sub_key,
+          route_ids=submission.route_ids)
+      plots[sub_order]['transit_cb'] = plot_transit_cb(
+          costs_source=sources['transit_cb_costs_source'],
+          benefits_source=sources['transit_cb_benefits_source'], sub_key=sub_key,
+          route_ids=submission.route_ids)
+    except:
+      pass
     plots[sub_order]['transit_inc_by_mode'] = plot_transit_inc_by_mode(
         source=sources['transit_inc_by_mode_source'], sub_key=sub_key)
     plots[sub_order]['toll_revenue_by_time'] = plot_toll_revenue_by_time(
@@ -1380,15 +1424,22 @@ scores_plots = column(
 outputs_mode_plots = row(
     *[column([plots[sub_order][p] for p in submission_outputs_mode_plots])
     for sub_order in sub_orders])
-outputs_los_plots = row(
-    *[column([plots[sub_order][p] for p in submission_outputs_los_plots])
-    for sub_order in sub_orders])
+# temp fix 12/20
+try:
+  outputs_los_plots = row(
+      *[column([plots[sub_order][p] for p in submission_outputs_los_plots])
+      for sub_order in sub_orders])
+except: 
+  pass
 outputs_congestion_plots = row(
     *[column([plots[sub_order][p] for p in submission_outputs_congestion_plots])
     for sub_order in sub_orders])
-outputs_transitcb_plots = row(
-    *[column([plots[sub_order][p] for p in submission_outputs_transitcb_plots])
-    for sub_order in sub_orders])
+try:
+  outputs_transitcb_plots = row(
+      *[column([plots[sub_order][p] for p in submission_outputs_transitcb_plots])
+      for sub_order in sub_orders])
+except:
+  pass
 outputs_toll_plots = row(
     *[column([plots[sub_order][p] for p in submission_outputs_toll_plots])
     for sub_order in sub_orders])
@@ -1457,9 +1508,13 @@ submission2_select.on_change(
 inputs = layout([inputs_plots], sizing_mode='fixed')
 scores = layout([[scores_plots]], sizing_mode='fixed')
 outputs_mode = layout([outputs_mode_plots], sizing_mode='fixed')
-outputs_los = layout([outputs_los_plots], sizing_mode='fixed')
+try: # temp fix 12/20
+  outputs_los = layout([outputs_los_plots], sizing_mode='fixed')
+  outputs_transitcb = layout([outputs_transitcb_plots], sizing_mode='fixed')
+except:
+  pass
 outputs_congestion = layout([outputs_congestion_plots], sizing_mode='fixed')
-outputs_transitcb = layout([outputs_transitcb_plots], sizing_mode='fixed')
+
 outputs_toll = layout([outputs_toll_plots], sizing_mode='fixed')
 outputs_sustainability = layout([outputs_sustainability_plots], sizing_mode='fixed')
 
@@ -1467,9 +1522,14 @@ outputs_sustainability = layout([outputs_sustainability_plots], sizing_mode='fix
 inputs_tab = Panel(child=inputs,title="Inputs")
 scores_tab = Panel(child=scores,title="Scores")
 outputs_mode_tab = Panel(child=outputs_mode,title="Outputs - Mode Choice")
-outputs_los_tab = Panel(child=outputs_los,title="Outputs - Level of Service")
+try: # temp fix 12/20
+  outputs_los_tab = Panel(child=outputs_los,title="Outputs - Level of Service")
+  outputs_transitcb_tab = Panel(child=outputs_transitcb,title="Outputs - Cost/Benefit")
+except:
+  outputs_los_tab = None
+  outputs_transitcb_tab = None
 outputs_congestion_tab = Panel(child=outputs_congestion,title="Outputs - Congestion")
-outputs_transitcb_tab = Panel(child=outputs_transitcb,title="Outputs - Cost/Benefit")
+
 outputs_toll_tab = Panel(child=outputs_toll,title='Outputs - Toll Revenue')
 outputs_sustainability_tab = Panel(child=outputs_sustainability,title="Outputs - Sustainability")
 

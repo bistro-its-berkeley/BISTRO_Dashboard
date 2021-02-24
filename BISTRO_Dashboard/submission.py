@@ -105,6 +105,9 @@ class Submission():
         # self.get_data()
         # self.make_data_sources()
 
+        #print('start parsing: ', self.simulation_ids)
+        #print('scenario: ', self.scenario)
+
     def get_data(self):
         if self.data_loaded:
             return
@@ -243,6 +246,9 @@ class Submission():
             self.make_sustainability_ghg_per_mode_data()
         self.data_source_made = True
 
+        print('done parsing')
+        print('....')
+
     def splitting_min_max(self, df, name_column):
         """ Parsing and splitting the ranges in the "age" (or "income") columns into two new columns:
         "min_age" (or "min_income") with the bottom value of the range and "max_age" (or "max_income") with the top value
@@ -315,7 +321,6 @@ class Submission():
 
         scores.loc[:, 'color'] = "#4682b4"
         scores.loc[scores["Component Name"] == 'Submission Score', 'color'] = "#000080"
-        print(scores)
         
         # min_score = min(scores['Weighted Score'].min(), 0.0) * 1.1
         # max_score = max(scores['Weighted Score'].max(), 1.0) * 1.1
@@ -1048,8 +1053,16 @@ class Submission():
                    "vehicleType"]
         bus_slice_df = self.paths_df[self.paths_df["mode"] == "bus"].copy()[columns]
 
-        bus_slice_df.loc[:, "route_id"] = bus_slice_df['vehicle'].apply(
-            lambda x: self.trip_to_route[x.split(":")[1].split('-')[0]])
+        try: # temp fix 12/20
+            bus_slice_df.loc[:, "route_id"] = bus_slice_df['vehicle'].apply(
+                lambda x: self.trip_to_route[x.split(":")[1].split('-')[0]])
+        except:
+            for index, row in bus_slice_df.iterrows():
+                try:
+                    route_id = int(self.trip_to_route_sf[row['vehicle'].split(":")[1]])
+                except:
+                    route_id = np.nan
+                bus_slice_df.loc[index, 'route_id'] = route_id
         bus_slice_df.loc[:, "serviceTime"] = (
             bus_slice_df['arrivalTime'] - bus_slice_df['departureTime']) / 3600
         bus_slice_df.loc[:, "seatingCapacity"] = bus_slice_df['vehicleType'].apply(
@@ -1079,6 +1092,7 @@ class Submission():
         # Completing the dataframe with the missing service periods and route_ids (so that they appear in the plot)
         for label in labels:
             if label not in grouped_data.columns:
+                #print(self.simulation_id)
                 grouped_data.loc[:, label] = 0.0
         
         df = pd.DataFrame(['', 0.0, 0.0, 0.0, 0.0, 0.0]).T
@@ -1100,8 +1114,17 @@ class Submission():
                    "fuelCost", "vehicleType"]
         bus_slice_df = self.paths_df.loc[self.paths_df["mode"] == "bus"].copy()[columns]
 
-        bus_slice_df.loc[:, "route_id"] = bus_slice_df['vehicle'].apply(
-            lambda x: self.trip_to_route[x.split(":")[-1].split('-')[0]])
+        try: # temp fix 12/20
+            bus_slice_df.loc[:, "route_id"] = bus_slice_df['vehicle'].apply(
+                lambda x: self.trip_to_route[x.split(":")[-1].split('-')[0]])
+        except:
+            for index, row in bus_slice_df.iterrows():
+                try:
+                    route_id = int(self.trip_to_route_sf[row['vehicle'].split(":")[1]])
+                except:
+                    route_id = np.nan
+                bus_slice_df.loc[index, 'route_id'] = route_id
+
         bus_slice_df.loc[:, "operational_costs_per_bus"] = bus_slice_df['vehicleType'].apply(lambda x: self.operational_costs[x])
         bus_slice_df.loc[:, "serviceTime"] = (bus_slice_df['arrivalTime'] - bus_slice_df['departureTime']) / 3600
         bus_slice_df.loc[:, "OperationalCosts"] = bus_slice_df['operational_costs_per_bus'] * bus_slice_df['serviceTime']

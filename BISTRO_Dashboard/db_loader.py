@@ -106,6 +106,7 @@ class BistroDB(object):
             FROM simulationrun
             LEFT JOIN simulationtag ON simulationtag.name = simulationrun.name
             # WHERE simulationrun.scenario = 'sioux_faux-15k'
+            WHERE simulationrun.scenario = 'sf_light-100k'
             """)
         return pd.DataFrame(
             data, columns=['simulation_id','datetime','scenario', 'name', 'tag'])
